@@ -49,14 +49,14 @@
     %% readbit     - object can be read
 
     %% Room flags
-    :- public room_flag/1.
+    :- public(room_flag/1).
     room_flag(rlandbit).
     room_flag(onbit).
     room_flag(sacredbit).
     room_flag(touchbit).
 
     %% Object interaction flags
-    :- public interaction_flag/1.
+    :- public(interaction_flag/1).
     interaction_flag(takebit).
     interaction_flag(contbit).
     interaction_flag(openbit).
@@ -70,7 +70,7 @@
     interaction_flag(wornbit).
 
     %% Physical/state flags
-    :- public physical_flag/1.
+    :- public(physical_flag/1).
     physical_flag(lightbit).
     physical_flag(burnbit).
     physical_flag(flamebit).
@@ -82,12 +82,12 @@
     physical_flag(readbit).
 
     %% NPC/character flags
-    :- public npc_flag/1.
+    :- public(npc_flag/1).
     npc_flag(person).
     npc_flag(looneybit).
 
     %% Display/description flags
-    :- public display_flag/1.
+    :- public(display_flag/1).
     display_flag(ndescbit).
     display_flag(invisible).
     display_flag(vowelbit).
@@ -96,7 +96,7 @@
     display_flag(duplicate).
 
     %% All valid flags (for validation)
-    :- public valid_flag/1.
+    :- public(valid_flag/1).
     valid_flag(F) :- room_flag(F).
     valid_flag(F) :- interaction_flag(F).
     valid_flag(F) :- physical_flag(F).

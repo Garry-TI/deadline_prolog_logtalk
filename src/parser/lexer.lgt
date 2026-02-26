@@ -17,39 +17,60 @@
         comment is 'Tokenize, filter buzz words, and normalize synonyms from player input.'
     ]).
 
+    :- uses(user, [atom_string/2, split_string/4, downcase_atom/2,
+                    string_lower/2]).
+
     %% ---------------------------------------------------------------
     %% PUBLIC API
     %% ---------------------------------------------------------------
 
     %% tokenize(+InputAtomOrString, -TokenList)
     %% Convert player input to a clean list of canonical word atoms.
-    :- public tokenize/2.
+    :- public(tokenize/2).
     tokenize(Input, Tokens) :-
         ( atom(Input) -> atom_string(Input, S) ; S = Input ),
         string_lower(S, Lower),
         split_string(Lower, " \t\r\n", " \t\r\n", Parts),
-        include([P]>>(P \= ""), Parts, NonEmpty),
-        maplist([P, W]>>(atom_string(W, P)), NonEmpty, Words),
-        maplist(normalize_word, Words, Normalized),
-        exclude(buzz_word, Normalized, Tokens).
+        parts_to_atoms(Parts, Words),
+        normalize_words(Words, Normalized),
+        filter_buzz(Normalized, Tokens).
 
     %% tokenize_raw(+Input, -Tokens)
     %% Like tokenize/2 but does not filter buzz words.
-    :- public tokenize_raw/2.
+    :- public(tokenize_raw/2).
     tokenize_raw(Input, Tokens) :-
         ( atom(Input) -> atom_string(Input, S) ; S = Input ),
         string_lower(S, Lower),
         split_string(Lower, " \t\r\n", " \t\r\n", Parts),
-        include([P]>>(P \= ""), Parts, NonEmpty),
-        maplist([P, W]>>(atom_string(W, P)), NonEmpty, Words),
-        maplist(normalize_word, Words, Tokens).
+        parts_to_atoms(Parts, Words),
+        normalize_words(Words, Tokens).
+
+    :- private(parts_to_atoms/2).
+    parts_to_atoms([], []).
+    parts_to_atoms([P|Ps], Atoms) :-
+        ( P = "" -> parts_to_atoms(Ps, Atoms)
+        ; atom_string(W, P), Atoms = [W|Rest], parts_to_atoms(Ps, Rest)
+        ).
+
+    :- private(normalize_words/2).
+    normalize_words([], []).
+    normalize_words([W|Ws], [N|Ns]) :-
+        normalize_word(W, N),
+        normalize_words(Ws, Ns).
+
+    :- private(filter_buzz/2).
+    filter_buzz([], []).
+    filter_buzz([W|Ws], Result) :-
+        ( buzz_word(W) -> filter_buzz(Ws, Result)
+        ; Result = [W|Rest], filter_buzz(Ws, Rest)
+        ).
 
     %% ---------------------------------------------------------------
     %% BUZZ WORD FILTER
     %% ZIL: <BUZZ A AN THE IS ARE AND OF THEN ALL ONE BUT EXCEPT ...>
     %% ---------------------------------------------------------------
 
-    :- public buzz_word/1.
+    :- public(buzz_word/1).
 
     buzz_word(a).
     buzz_word(an).
@@ -86,12 +107,12 @@
     %% All synonyms map to the canonical (first listed) word.
     %% ---------------------------------------------------------------
 
-    :- private normalize_word/2.
+    :- private(normalize_word/2).
     normalize_word(Word, Canonical) :-
         ( synonym_map(Word, Canonical) -> true ; Canonical = Word ).
 
-    %% synonym_map(?Input, ?Canonical) — normalize a word to its canonical form
-    :- public synonym_map/2.
+    %% synonym_map(?Input, ?Canonical) - normalize a word to its canonical form
+    :- public(synonym_map/2).
 
     %% ---- Preposition synonyms (syntax.zil) ----
     synonym_map(using,    with).
@@ -230,7 +251,7 @@
     synonym_map(chuck,     throw).
     synonym_map(toss,      throw).
 
-    %% Punctuation / special characters — strip these
+    %% Punctuation / special characters - strip these
     synonym_map('.',  '.').
     synonym_map(',',  ',').
     synonym_map('"',  '"').
@@ -239,7 +260,7 @@
     %% DIRECTION CLASSIFICATION
     %% ---------------------------------------------------------------
 
-    :- public is_direction/1.
+    :- public(is_direction/1).
     is_direction(north).
     is_direction(south).
     is_direction(east).
@@ -257,7 +278,7 @@
     %% PRONOUN RECOGNITION
     %% ---------------------------------------------------------------
 
-    :- public is_pronoun/2.
+    :- public(is_pronoun/2).
     is_pronoun(it,  it).
     is_pronoun(him, him_her).
     is_pronoun(her, him_her).
@@ -267,8 +288,8 @@
     %% NUMBER HANDLING
     %% ---------------------------------------------------------------
 
-    %% parse_number(+Atom, -Number) — parse an atom as a number
-    :- public parse_number/2.
+    %% parse_number(+Atom, -Number) - parse an atom as a number
+    :- public(parse_number/2).
     parse_number(Atom, Number) :-
         atom(Atom),
         atom_number(Atom, Number).

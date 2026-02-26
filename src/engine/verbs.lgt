@@ -17,16 +17,17 @@
         comment is 'Default verb handlers: look, take, drop, put, open, close, inventory, etc.'
     ]).
 
+
     %% ---------------------------------------------------------------
     %% DISPATCH ENTRY POINT
     %% Called by game_loop::dispatch/3 as the generic verb handler.
     %% ---------------------------------------------------------------
 
-    :- public dispatch_verb/3.
+    :- public(dispatch_verb/3).
     dispatch_verb(Verb, DO, IO) :-
         verb_handler(Verb, DO, IO).
 
-    :- private verb_handler/3.
+    :- private(verb_handler/3).
 
     %% ---------------------------------------------------------------
     %% META / SYSTEM COMMANDS
@@ -161,7 +162,7 @@
     %% ZIL: V-LOOK / DESCRIBE-ROOM / DESCRIBE-OBJECTS
     %% ---------------------------------------------------------------
 
-    :- public v_look/0.
+    :- public(v_look/0).
     v_look :-
         game_loop::describe_current_room.
 
@@ -169,17 +170,17 @@
     %% VERBOSE / BRIEF
     %% ---------------------------------------------------------------
 
-    :- public v_verbose/0.
+    :- public(v_verbose/0).
     v_verbose :-
         state::set_global(verbose_mode, true),
         writeln("OK, you will get verbose descriptions.").
 
-    :- public v_brief/0.
+    :- public(v_brief/0).
     v_brief :-
         state::set_global(verbose_mode, false),
         writeln("OK, you will get brief descriptions.").
 
-    :- public v_super_brief/0.
+    :- public(v_super_brief/0).
     v_super_brief :-
         state::set_global(verbose_mode, super),
         writeln("OK, you will get super-brief descriptions.").
@@ -188,7 +189,7 @@
     %% EXAMINE (V-EXAMINE)
     %% ---------------------------------------------------------------
 
-    :- public v_examine/1.
+    :- public(v_examine/1).
     v_examine(none) :- writeln("Examine what?").
     v_examine(DO) :-
         ( \+ resolver::is_accessible(DO) ->
@@ -210,7 +211,7 @@
             )
         ).
 
-    :- private person_examine/1.
+    :- private(person_examine/1).
     person_examine(DO) :-
         catch(DO::ldesc(D), _, D = ''),
         ( D \= '' -> writeln(D) ; true ).
@@ -219,7 +220,7 @@
     %% LOOK INSIDE (V-LOOK-INSIDE)
     %% ---------------------------------------------------------------
 
-    :- public v_look_inside/1.
+    :- public(v_look_inside/1).
     v_look_inside(none) :- writeln("Look inside what?").
     v_look_inside(DO) :-
         ( state::has_flag(DO, contbit) ->
@@ -246,15 +247,15 @@
     %% LOOK UNDER/BEHIND/ON
     %% ---------------------------------------------------------------
 
-    :- public v_look_under/1.
+    :- public(v_look_under/1).
     v_look_under(none) :- writeln("Look under what?").
     v_look_under(_DO) :- writeln("There's nothing under there.").
 
-    :- public v_look_behind/1.
+    :- public(v_look_behind/1).
     v_look_behind(none) :- writeln("Look behind what?").
     v_look_behind(_DO) :- writeln("There's nothing behind there.").
 
-    :- public v_look_on/1.
+    :- public(v_look_on/1).
     v_look_on(none) :- writeln("Look on what?").
     v_look_on(DO) :-
         ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
@@ -273,7 +274,7 @@
     %% READ (V-READ)
     %% ---------------------------------------------------------------
 
-    :- public v_read/1.
+    :- public(v_read/1).
     v_read(none) :- writeln("Read what?").
     v_read(DO) :-
         ( catch(DO::read_action, _, fail) -> true
@@ -286,17 +287,14 @@
     %% ZIL: V-INVENTORY
     %% ---------------------------------------------------------------
 
-    :- public v_inventory/0.
+    :- public(v_inventory/0).
     v_inventory :-
         findall(Item, state::location(Item, player), Items),
         ( Items = [] ->
             writeln("You are carrying nothing.")
         ;
             writeln("You are carrying:"),
-            maplist([Item]>>(
-                ( catch(Item::desc(D), _, D = Item) -> true ; D = Item ),
-                format("  ~w~n", [D])
-            ), Items)
+            print_item_list(Items)
         ).
 
     %% ---------------------------------------------------------------
@@ -304,7 +302,7 @@
     %% ZIL: V-TAKE / PRE-TAKE
     %% ---------------------------------------------------------------
 
-    :- public v_take/1.
+    :- public(v_take/1).
     v_take(none) :- writeln("Take what?").
     v_take(DO) :-
         ( state::location(DO, player) ->
@@ -331,7 +329,7 @@
     %% DROP (V-DROP)
     %% ---------------------------------------------------------------
 
-    :- public v_drop/1.
+    :- public(v_drop/1).
     v_drop(none) :- writeln("Drop what?").
     v_drop(DO) :-
         ( \+ state::location(DO, player) ->
@@ -347,7 +345,7 @@
     %% PUT (V-PUT)
     %% ---------------------------------------------------------------
 
-    :- public v_put/3.
+    :- public(v_put/3).
     v_put(none, _, _) :- writeln("Put what?").
     v_put(DO, _, none) :- format("Put the ~w where?~n", [DO]).
     v_put(DO, _Prep, Container) :-
@@ -365,7 +363,7 @@
             writeln("Done.")
         ).
 
-    :- public v_put_under/2.
+    :- public(v_put_under/2).
     v_put_under(_DO, _Under) :-
         writeln("That's not possible.").
 
@@ -373,7 +371,7 @@
     %% OPEN / CLOSE / LOCK / UNLOCK
     %% ---------------------------------------------------------------
 
-    :- public v_open/1.
+    :- public(v_open/1).
     v_open(none) :- writeln("Open what?").
     v_open(DO) :-
         ( \+ state::has_flag(DO, doorbit), \+ state::has_flag(DO, contbit) ->
@@ -389,7 +387,7 @@
             writeln("Opened.")
         ).
 
-    :- public v_close/1.
+    :- public(v_close/1).
     v_close(none) :- writeln("Close what?").
     v_close(DO) :-
         ( \+ state::has_flag(DO, doorbit), \+ state::has_flag(DO, contbit) ->
@@ -402,7 +400,7 @@
             writeln("Closed.")
         ).
 
-    :- public v_lock/2.
+    :- public(v_lock/2).
     v_lock(none, _) :- writeln("Lock what?").
     v_lock(DO, _Key) :-
         ( state::has_flag(DO, lockbit) ->
@@ -414,7 +412,7 @@
             writeln("Locked.")
         ).
 
-    :- public v_unlock/1.
+    :- public(v_unlock/1).
     v_unlock(none) :- writeln("Unlock what?").
     v_unlock(DO) :-
         ( \+ state::has_flag(DO, lockbit) ->
@@ -429,11 +427,11 @@
     %% MOVEMENT
     %% ---------------------------------------------------------------
 
-    :- public v_walk/1.
+    :- public(v_walk/1).
     v_walk(Dir) :-
         game_loop::move_player(Dir).
 
-    :- public v_exit/0.
+    :- public(v_exit/0).
     v_exit :-
         state::current_room(Room),
         ( catch(Room::exit(out, Target, _Cond), _, fail) ->
@@ -443,26 +441,26 @@
         ;   writeln("You can't exit from here.")
         ).
 
-    :- public v_through/1.
+    :- public(v_through/1).
     v_through(DO) :-
         ( DO = none -> writeln("Go through what?")
         ;   writeln("You can't go through that.")
         ).
 
-    :- public v_climb_up/1.
+    :- public(v_climb_up/1).
     v_climb_up(_DO) :- game_loop::move_player(up).
 
-    :- public v_climb_down/1.
+    :- public(v_climb_down/1).
     v_climb_down(_DO) :- game_loop::move_player(down).
 
     %% ---------------------------------------------------------------
     %% WAIT
     %% ---------------------------------------------------------------
 
-    :- public v_wait/0.
+    :- public(v_wait/0).
     v_wait :- writeln("Time passes.").
 
-    :- public v_wait_for/1.
+    :- public(v_wait_for/1).
     v_wait_for(none) :- writeln("Wait for what?").
     v_wait_for(_DO) :- writeln("Time passes.").
 
@@ -470,18 +468,18 @@
     %% SEARCH
     %% ---------------------------------------------------------------
 
-    :- public v_search/1.
+    :- public(v_search/1).
     v_search(none) :- writeln("Search what?").
     v_search(DO) :-
         v_examine(DO).
 
-    :- public v_search_around/1.
+    :- public(v_search_around/1).
     v_search_around(_) :-
         state::current_room(Room),
         ( catch(Room::ldesc(D), _, D = '') -> true ; D = '' ),
         ( D = '' -> writeln("You see nothing unusual.") ; writeln(D) ).
 
-    :- public v_find/1.
+    :- public(v_find/1).
     v_find(none) :- writeln("Find what?").
     v_find(DO) :-
         ( state::location(DO, Loc) ->
@@ -499,13 +497,13 @@
     %% ANALYSE / FINGERPRINT
     %% ---------------------------------------------------------------
 
-    :- public v_analyze/1.
+    :- public(v_analyze/1).
     v_analyze(none) :- writeln("Analyze what?").
     v_analyze(DO) :-
         ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
         format("You study the ~w carefully but find nothing extraordinary.~n", [D]).
 
-    :- public v_fingerprint/1.
+    :- public(v_fingerprint/1).
     v_fingerprint(none) :- writeln("Fingerprint what?").
     v_fingerprint(DO) :-
         ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
@@ -516,7 +514,7 @@
     %% ACCUSE / ARREST / CONFRONT
     %% ---------------------------------------------------------------
 
-    :- public v_accuse/2.
+    :- public(v_accuse/2).
     v_accuse(none, _) :- writeln("Accuse whom?").
     v_accuse(Person, Evidence) :-
         ( catch(Person::desc(D), _, D = Person) -> true ; D = Person ),
@@ -530,13 +528,13 @@
         writeln("\""),
         writeln("This requires more proof before making a formal accusation.").
 
-    :- public v_arrest/1.
+    :- public(v_arrest/1).
     v_arrest(none) :- writeln("Arrest whom?").
     v_arrest(Person) :-
         ( catch(Person::desc(D), _, D = Person) -> true ; D = Person ),
         format("You attempt to arrest ~w. Without sufficient evidence, this won't stick.~n", [D]).
 
-    :- public v_confront/2.
+    :- public(v_confront/2).
     v_confront(none, _) :- writeln("Confront whom?").
     v_confront(Person, Evidence) :-
         ( catch(Person::desc(D), _, D = Person) -> true ; D = Person ),
@@ -551,7 +549,7 @@
     %% ASK / TELL / DIALOGUE
     %% ---------------------------------------------------------------
 
-    :- public v_ask_about/2.
+    :- public(v_ask_about/2).
     v_ask_about(none, _) :- writeln("Ask whom?").
     v_ask_about(Person, Topic) :-
         ( catch(Person::dialogue_response(Topic, Response), _, Response = none) ->
@@ -565,12 +563,12 @@
             format("~w has nothing to say about that.~n", [D])
         ).
 
-    :- public v_ask_for/2.
+    :- public(v_ask_for/2).
     v_ask_for(Person, _Item) :-
         ( catch(Person::desc(D), _, D = Person) -> true ; D = Person ),
         format("~w declines.~n", [D]).
 
-    :- public v_give/2.
+    :- public(v_give/2).
     v_give(none, _)  :- writeln("Give what?").
     v_give(_, none)  :- writeln("Give it to whom?").
     v_give(Item, Person) :-
@@ -584,7 +582,7 @@
             )
         ).
 
-    :- public v_show/2.
+    :- public(v_show/2).
     v_show(none, _)  :- writeln("Show what?").
     v_show(_, none)  :- writeln("Show it to whom?").
     v_show(Item, Person) :-
@@ -593,13 +591,13 @@
             format("~w looks at it without much interest.~n", [D])
         ).
 
-    :- public v_tell/1.
+    :- public(v_tell/1).
     v_tell(none) :- writeln("Tell whom?").
     v_tell(Person) :-
         ( catch(Person::desc(D), _, D = Person) -> true ; D = Person ),
         format("~w nods politely.~n", [D]).
 
-    :- public v_hello/0.
+    :- public(v_hello/0).
     v_hello :-
         state::current_room(Room),
         findall(NPC, (
@@ -609,34 +607,29 @@
         ), NPCs),
         ( NPCs = [] ->
             writeln("There's no one here to greet.")
-        ;   maplist([NPC]>>(
-                ( catch(NPC::greet_response, _, fail) -> true
-                ;   ( catch(NPC::desc(D), _, D = NPC) -> true ; D = NPC ),
-                    format("~w nods politely.~n", [D])
-                )
-            ), NPCs)
+        ;   greet_npc_list(NPCs)
         ).
 
-    :- public v_goodbye/0.
+    :- public(v_goodbye/0).
     v_goodbye :- writeln("Goodbye.").
 
-    :- public v_reply/0.
+    :- public(v_reply/0).
     v_reply :- writeln("There is no question to reply to.").
 
-    :- public v_say/0.
+    :- public(v_say/0).
     v_say :- writeln("Say what?").
 
-    :- public v_yn/0.
+    :- public(v_yn/0).
     v_yn :- writeln("That's a rhetorical question.").
 
-    :- public v_thank/0.
+    :- public(v_thank/0).
     v_thank :- writeln("You're welcome, I'm sure.").
 
     %% ---------------------------------------------------------------
     %% WHAT
     %% ---------------------------------------------------------------
 
-    :- public v_what/1.
+    :- public(v_what/1).
     v_what(none) :- writeln("What about what?").
     v_what(DO) :-
         ( catch(DO::ldesc(D), _, D = '') ->
@@ -653,7 +646,7 @@
     %% EAT / DRINK / TASTE / SMELL
     %% ---------------------------------------------------------------
 
-    :- public v_eat/1.
+    :- public(v_eat/1).
     v_eat(none) :- writeln("Eat what?").
     v_eat(DO) :-
         ( state::has_flag(DO, foodbit) ->
@@ -663,7 +656,7 @@
         ;   writeln("That's not edible.")
         ).
 
-    :- public v_drink/1.
+    :- public(v_drink/1).
     v_drink(none) :- writeln("Drink what?").
     v_drink(DO) :-
         ( state::has_flag(DO, drinkbit) ->
@@ -673,12 +666,12 @@
         ;   writeln("That's not drinkable.")
         ).
 
-    :- public v_taste/1.
+    :- public(v_taste/1).
     v_taste(DO) :-
         ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
         format("The ~w tastes unremarkable.~n", [D]).
 
-    :- public v_smell/1.
+    :- public(v_smell/1).
     v_smell(DO) :-
         ( DO = none ->
             writeln("You detect nothing unusual.")
@@ -686,68 +679,68 @@
             format("The ~w smells unremarkable.~n", [D])
         ).
 
-    :- public v_listen/1.
+    :- public(v_listen/1).
     v_listen(_) :- writeln("You hear nothing unusual.").
 
     %% ---------------------------------------------------------------
     %% PHYSICAL MANIPULATION
     %% ---------------------------------------------------------------
 
-    :- public v_rub/1.
+    :- public(v_rub/1).
     v_rub(none) :- writeln("Rub what?").
     v_rub(DO) :-
         ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
         format("Rubbing the ~w achieves nothing.~n", [D]).
 
-    :- public v_shake/1.
+    :- public(v_shake/1).
     v_shake(none) :- writeln("Shake what?").
     v_shake(DO) :-
         ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
         format("You shake the ~w. Nothing falls out.~n", [D]).
 
-    :- public v_wave/1.
+    :- public(v_wave/1).
     v_wave(none) :- writeln("Wave what?").
     v_wave(DO) :-
         ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
         format("You wave the ~w. Nothing happens.~n", [D]).
 
-    :- public v_squeeze/1.
+    :- public(v_squeeze/1).
     v_squeeze(none) :- writeln("Squeeze what?").
     v_squeeze(DO) :-
         ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
         format("Squeezing the ~w doesn't help.~n", [D]).
 
-    :- public v_push/1.
+    :- public(v_push/1).
     v_push(none) :- writeln("Push what?").
     v_push(DO) :-
         ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
         format("Pushing the ~w doesn't accomplish anything.~n", [D]).
 
-    :- public v_pull/1.
+    :- public(v_pull/1).
     v_pull(none) :- writeln("Pull what?").
     v_pull(DO) :-
         ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
         format("Pulling the ~w doesn't accomplish anything.~n", [D]).
 
-    :- public v_move/1.
+    :- public(v_move/1).
     v_move(none) :- writeln("Move what?").
     v_move(DO) :-
         ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
         format("Moving the ~w reveals nothing.~n", [D]).
 
-    :- public v_turn/1.
+    :- public(v_turn/1).
     v_turn(none) :- writeln("Turn what?").
     v_turn(DO) :-
         ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
         format("Turning the ~w accomplishes nothing.~n", [D]).
 
-    :- public v_use/1.
+    :- public(v_use/1).
     v_use(none) :- writeln("Use what?").
     v_use(DO) :-
         ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
         format("You don't know how to use the ~w that way.~n", [D]).
 
-    :- public v_throw/2.
+    :- public(v_throw/2).
     v_throw(none, _) :- writeln("Throw what?").
     v_throw(DO, _At) :-
         ( \+ state::location(DO, player) ->
@@ -759,78 +752,78 @@
             format("You throw the ~w.~n", [D])
         ).
 
-    :- public v_kick/1.
+    :- public(v_kick/1).
     v_kick(none) :- writeln("Kick what?").
     v_kick(DO) :-
         ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
         format("Kicking the ~w doesn't help.~n", [D]).
 
-    :- public v_kiss/1.
+    :- public(v_kiss/1).
     v_kiss(none) :- writeln("Kiss what?").
     v_kiss(_DO) :- writeln("Don't be ridiculous.").
 
-    :- public v_knock/1.
+    :- public(v_knock/1).
     v_knock(none) :- writeln("Knock on what?").
     v_knock(_DO) :- writeln("There is no answer.").
 
-    :- public v_jump/0.
+    :- public(v_jump/0).
     v_jump :- writeln("You jump up and down. Nothing happens.").
 
-    :- public v_swim/0.
+    :- public(v_swim/0).
     v_swim :- writeln("There's no suitable water here.").
 
-    :- public v_attack/1.
+    :- public(v_attack/1).
     v_attack(_) :- writeln("Violence is not the answer in a detective story.").
 
-    :- public v_kill/1.
+    :- public(v_kill/1).
     v_kill(_) :- writeln("Violence is not the answer in a detective story.").
 
-    :- public v_follow/1.
+    :- public(v_follow/1).
     v_follow(none) :- writeln("Follow whom?").
     v_follow(Person) :-
         ( catch(Person::desc(D), _, D = Person) -> true ; D = Person ),
         format("You'll have to follow ~w yourself.~n", [D]).
 
-    :- public v_call/1.
+    :- public(v_call/1).
     v_call(none) :- writeln("The telephone is in the foyer.").
     v_call(DO) :-
         ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
         format("There's no way to call ~w right now.~n", [D]).
 
-    :- public v_phone/1.
+    :- public(v_phone/1).
     v_phone(_DO) :- writeln("You'd need access to a telephone.").
 
     %% ---------------------------------------------------------------
     %% SCORE / TIME
     %% ---------------------------------------------------------------
 
-    :- public v_score/0.
+    :- public(v_score/0).
     v_score :-
         writeln("Scoring is handled through your investigative progress."),
         clock::display_time.
 
-    :- public v_time/0.
+    :- public(v_time/0).
     v_time :- clock::display_time.
 
     %% ---------------------------------------------------------------
     %% QUIT / RESTART / VERSION / DIAGNOSE
     %% ---------------------------------------------------------------
 
-    :- public v_quit/0.
+    :- public(v_quit/0).
     v_quit :- game_loop::confirm_quit.
 
-    :- public v_restart/0.
+    :- public(v_restart/0).
     v_restart :-
         writeln("Restarting..."),
         halt.  % caller should re-invoke go/0 in a real implementation
 
-    :- public v_version/0.
+    :- public(v_version/0).
     v_version :-
         writeln("DEADLINE"),
         writeln("Logtalk/Prolog refactoring"),
         writeln("Original game Copyright 1982 Infocom, Inc.").
 
-    :- public v_diagnose/0.
+    :- public(v_diagnose/0).
     v_diagnose :-
         writeln("You are in good health.").
 
@@ -838,7 +831,7 @@
     %% AGAIN
     %% ---------------------------------------------------------------
 
-    :- public v_again/0.
+    :- public(v_again/0).
     v_again :-
         ( state::global_val(last_verb, V), V \= none ->
             state::global_val(last_do, DO),
@@ -846,5 +839,25 @@
             game_loop::perform(V, DO, IO)
         ;   writeln("Nothing to repeat.")
         ).
+
+    %% ---------------------------------------------------------------
+    %% HELPER PREDICATES
+    %% ---------------------------------------------------------------
+
+    :- private(print_item_list/1).
+    print_item_list([]).
+    print_item_list([Item|Rest]) :-
+        ( catch(Item::desc(D), _, D = Item) -> true ; D = Item ),
+        format("  ~w~n", [D]),
+        print_item_list(Rest).
+
+    :- private(greet_npc_list/1).
+    greet_npc_list([]).
+    greet_npc_list([NPC|Rest]) :-
+        ( catch(NPC::greet_response, _, fail) -> true
+        ;   ( catch(NPC::desc(D), _, D = NPC) -> true ; D = NPC ),
+            format("~w nods politely.~n", [D])
+        ),
+        greet_npc_list(Rest).
 
 :- end_object.

@@ -16,13 +16,15 @@
         comment is 'Room/object/NPC action handlers; pre-action checks; event routines.'
     ]).
 
+    :- uses(user, [member/2]).
+
     %% ---------------------------------------------------------------
     %% PRE-ACTION HANDLERS
     %% Called before object-specific handlers in the PERFORM chain.
     %% ZIL: PREACTIONS table in main.zil
     %% ---------------------------------------------------------------
 
-    :- public pre_action/3.
+    :- public(pre_action/3).
 
     %% PRE-TAKE: weight check, non-takeable check, fixed objects
     pre_action(v_take, DO, _IO) :-
@@ -62,7 +64,7 @@
     %% ---------------------------------------------------------------
 
     %% in_roses action: gardener anger when player enters rose garden
-    :- public in_roses_action/4.
+    :- public(in_roses_action/4).
     in_roses_action(m_enter, v_walk, _DO, _IO) :-
         state::global_val(gardener_angry, false),
         state::location(gardener, GardenerLoc),
@@ -80,7 +82,7 @@
     in_roses_action(_, _, _, _) :- true.
 
     %% foyer action: Mrs. Robner welcome on first enter
-    :- public foyer_action/4.
+    :- public(foyer_action/4).
     foyer_action(m_enter, v_walk, _DO, _IO) :-
         \+ state::has_flag(foyer, touchbit),
         state::global_val(present_time, T),
@@ -90,7 +92,7 @@
         welcome_player.
     foyer_action(_, _, _, _) :- true.
 
-    :- private welcome_player/0.
+    :- private(welcome_player/0).
     welcome_player :-
         writeln("\"Ah, you must be the Inspector from the police. How kind of you to come so"),
         writeln("quickly. I am Leslie Robner. Won't you please come in? I am afraid it is"),
@@ -100,7 +102,7 @@
         state::move_entity(mrs_robner, living_room).
 
     %% library action: hidden door behind bookshelves
-    :- public library_action/4.
+    :- public(library_action/4).
     library_action(m_beg, v_push, library_button, _IO) :-
         !,
         library_button_press.
@@ -117,13 +119,13 @@
     %% ---------------------------------------------------------------
 
     %% Library button: reveals hidden closet
-    :- public library_button_action/3.
+    :- public(library_button_action/3).
     library_button_action(v_push, _, _) :-
         !,
         library_button_press.
     library_button_action(_, _, _) :- true.
 
-    :- public library_button_press/0.
+    :- public(library_button_press/0).
     library_button_press :-
         ( state::has_flag(hidden_door_l, invisible) ->
             state::clear_flag(hidden_door_l, invisible),
@@ -134,18 +136,18 @@
         ).
 
     %% Blue button (in hidden closet): same effect
-    :- public blue_button_press/0.
+    :- public(blue_button_press/0).
     blue_button_press :-
         writeln("You press the blue button. The bookshelf swings closed with a soft click."),
         state::set_flag(hidden_door_l, invisible).
 
     %% Red button: triggers something else (per actions.zil)
-    :- public red_button_press/0.
+    :- public(red_button_press/0).
     red_button_press :-
         writeln("You press the red button. Nothing seems to happen.").
 
     %% Safe: combination required
-    :- public safe_action/3.
+    :- public(safe_action/3).
     safe_action(v_open, safe, _IO) :-
         !,
         safe_open.
@@ -154,7 +156,7 @@
         safe_open.
     safe_action(_, _, _) :- true.
 
-    :- public safe_open/0.
+    :- public(safe_open/0).
     safe_open :-
         ( state::has_flag(safe, openbit) ->
             writeln("The safe is already open.")
@@ -165,7 +167,7 @@
         ).
 
     %% Front door action: locked/unlocked state
-    :- public front_door_action/3.
+    :- public(front_door_action/3).
     front_door_action(v_open, front_door, _IO) :-
         !,
         ( state::has_flag(front_door, openbit) ->
@@ -183,7 +185,7 @@
     front_door_action(_, _, _) :- true.
 
     %% Bay window: can be opened
-    :- public bay_window_action/3.
+    :- public(bay_window_action/3).
     bay_window_action(v_open, bay_window, _IO) :-
         !,
         ( state::has_flag(bay_window, openbit) ->
@@ -201,7 +203,7 @@
     bay_window_action(_, _, _) :- true.
 
     %% Ladder: special climb behavior
-    :- public ladder_action/3.
+    :- public(ladder_action/3).
     ladder_action(v_climb_up, ladder, _IO) :-
         !,
         ( state::location(ladder, in_roses) ->
@@ -243,8 +245,8 @@
         ).
     ladder_action(_, _, _) :- true.
 
-    %% Ebullion: the poison — key evidence
-    :- public ebullion_action/3.
+    %% Ebullion: the poison - key evidence
+    :- public(ebullion_action/3).
     ebullion_action(v_examine, ebullion, _IO) :-
         !,
         writeln("A small quantity of a clear liquid. The label on the bottle reads: Ebullion."),
@@ -252,7 +254,7 @@
     ebullion_action(_, _, _) :- true.
 
     %% Note paper: key evidence
-    :- public note_paper_action/3.
+    :- public(note_paper_action/3).
     note_paper_action(v_read, note_paper, _IO) :-
         !,
         writeln("The note reads:"),
@@ -265,7 +267,7 @@
     note_paper_action(_, _, _) :- true.
 
     %% Desk calendar: shows today's date and appointments
-    :- public desk_calendar_action/3.
+    :- public(desk_calendar_action/3).
     desk_calendar_action(v_read, desk_calendar, _IO) :-
         !,
         writeln("The calendar shows today's date: Thursday."),
@@ -275,7 +277,7 @@
     desk_calendar_action(_, _, _) :- true.
 
     %% Trash: examine reveals crumpled note
-    :- public trash_action/3.
+    :- public(trash_action/3).
     trash_action(v_examine, trash, _IO) :-
         !,
         writeln("Crumpled papers, apparently torn and discarded."),
@@ -292,7 +294,7 @@
     %% ---------------------------------------------------------------
 
     %% Gardener: angry if player enters rose garden
-    :- public gardener_action/3.
+    :- public(gardener_action/3).
     gardener_action(v_ask_about, gardener, pair(about, _Topic)) :-
         state::global_val(gardener_angry, true),
         !,
@@ -313,7 +315,7 @@
     gardener_action(_, _, _) :- true.
 
     %% Dunbar: key witness
-    :- public dunbar_action/3.
+    :- public(dunbar_action/3).
     dunbar_action(v_ask_about, dunbar, pair(about, Topic)) :-
         !,
         ( catch(dunbar::dialogue_response(Topic, Response), _, Response = none) ->
@@ -331,7 +333,7 @@
     dunbar_action(_, _, _) :- true.
 
     %% Mrs. Robner: grieving widow
-    :- public mrs_robner_action/3.
+    :- public(mrs_robner_action/3).
     mrs_robner_action(v_ask_about, mrs_robner, pair(about, Topic)) :-
         !,
         ( catch(mrs_robner::dialogue_response(Topic, Response), _, Response = none) ->
@@ -344,7 +346,7 @@
     mrs_robner_action(_, _, _) :- true.
 
     %% George: nervous son
-    :- public george_action/3.
+    :- public(george_action/3).
     george_action(v_ask_about, george, pair(about, Topic)) :-
         !,
         ( catch(george::dialogue_response(Topic, Response), _, Response = none) ->
@@ -357,7 +359,7 @@
     george_action(_, _, _) :- true.
 
     %% Rourke: the maid
-    :- public rourke_action/3.
+    :- public(rourke_action/3).
     rourke_action(v_ask_about, rourke, pair(about, Topic)) :-
         !,
         ( catch(rourke::dialogue_response(Topic, Response), _, Response = none) ->
@@ -370,7 +372,7 @@
     rourke_action(_, _, _) :- true.
 
     %% Baxter: the doctor
-    :- public baxter_action/3.
+    :- public(baxter_action/3).
     baxter_action(v_ask_about, baxter, pair(about, Topic)) :-
         !,
         ( catch(baxter::dialogue_response(Topic, Response), _, Response = none) ->
@@ -387,7 +389,7 @@
     %% ---------------------------------------------------------------
 
     %% Newspaper delivery
-    :- public i_newspaper/0.
+    :- public(i_newspaper/0).
     i_newspaper :-
         state::current_room(Here),
         ( Here = south_lawn ; Here = front_path ; Here = west_of_door ->
@@ -398,7 +400,7 @@
         clock::disable_event(actions::i_newspaper).
 
     %% Mail delivery
-    :- public i_mail/0.
+    :- public(i_mail/0).
     i_mail :-
         state::current_room(Here),
         ( Here = south_lawn ; Here = front_path ; Here = foyer ->
@@ -410,7 +412,7 @@
         clock::disable_event(actions::i_mail).
 
     %% Phone call
-    :- public i_call/0.
+    :- public(i_call/0).
     i_call :-
         state::current_room(Here),
         ( Here = foyer ; Here = living_room ; Here = nfoyer ->
@@ -420,23 +422,23 @@
         clock::disable_event(actions::i_call).
 
     %% Gardener calms down (GARDENER-NO-REPLY cleared)
-    :- public i_gardener_calm/0.
+    :- public(i_gardener_calm/0).
     i_gardener_calm :-
         state::set_global(gardener_angry, false).
 
     %% Show hole in rose garden (I-SHOW-HOLE event)
-    :- public i_show_hole/0.
+    :- public(i_show_hole/0).
     i_show_hole :-
         state::clear_flag(hole, invisible),
         state::current_room(in_roses),
         writeln("You notice disturbed earth -- there appear to be holes in the soft dirt.").
 
     %% Baxter arrives
-    :- public i_baxter_arrive/0.
+    :- public(i_baxter_arrive/0).
     i_baxter_arrive :- npc_ai::i_baxter_arrive.
 
     %% Coates arrives
-    :- public i_coates_arrive/0.
+    :- public(i_coates_arrive/0).
     i_coates_arrive :- npc_ai::i_coates_arrive.
 
     %% ---------------------------------------------------------------
@@ -444,7 +446,7 @@
     %% ---------------------------------------------------------------
 
     %% Format a door open/closed description (ZIL: DDESC macro)
-    :- public ddesc/3.
+    :- public(ddesc/3).
     ddesc(Prefix, Door, Suffix) :-
         ( state::has_flag(Door, openbit) ->
             State = "open"

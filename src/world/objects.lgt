@@ -17,7 +17,7 @@
 %% ===================================================================
 
 :- object(south_closet_door, extends(entity), imports(door)).
-    :- info([comment is 'South closet door — initially open']).
+    :- info([comment is 'South closet door - initially open']).
     adjective([closet]).
     synonym([door]).
     desc("south closet door").
@@ -26,7 +26,7 @@
 :- end_object.
 
 :- object(front_door, extends(entity), imports(door)).
-    :- info([comment is 'Front door — initially closed']).
+    :- info([comment is 'Front door - initially closed']).
     synonym([door]).
     adjective([front]).
     desc("front door").
@@ -52,7 +52,7 @@
 :- end_object.
 
 :- object(dunbar_bath_door, extends(entity), imports(door)).
-    :- info([comment is "Dunbar's bathroom door — initially open"]).
+    :- info([comment is "Dunbar's bathroom door - initially open"]).
     synonym([door]).
     desc("door").
     initial_flags([doorbit, contbit, openbit]).
@@ -87,7 +87,7 @@
 :- end_object.
 
 :- object(george_bath_door, extends(entity), imports(door)).
-    :- info([comment is "George's bathroom door — initially open"]).
+    :- info([comment is "George's bathroom door - initially open"]).
     synonym([door]).
     adjective([bathroom, east]).
     desc("bathroom door").
@@ -96,7 +96,7 @@
 :- end_object.
 
 :- object(hidden_door_l, extends(entity), imports(door)).
-    :- info([comment is 'Hidden door (library side) — initially invisible']).
+    :- info([comment is 'Hidden door (library side) - initially invisible']).
     synonym([door]).
     adjective([hidden]).
     desc("hidden door").
@@ -105,7 +105,7 @@
 :- end_object.
 
 :- object(hidden_door_b, extends(entity), imports(door)).
-    :- info([comment is 'Hidden door (bedroom side) — initially invisible']).
+    :- info([comment is 'Hidden door (bedroom side) - initially invisible']).
     synonym([door]).
     adjective([hidden]).
     desc("hidden door").
@@ -132,7 +132,7 @@
 :- end_object.
 
 %% ===================================================================
-%%  LOCAL GLOBALS — Environmental Objects
+%%  LOCAL GLOBALS - Environmental Objects
 %%  ZIL source: dungeon.zil lines 941-999
 %% ===================================================================
 
@@ -257,7 +257,7 @@
     initial_location(local_globals).
 :- end_object.
 
-:- object(sofa, extends(entity), imports(surface, container)).
+:- object(sofa, extends(entity), imports([surface, container])).
     :- info([comment is 'Sofa in living room']).
     desc("sofa").
     synonym([couch, sofa, couches]).
@@ -283,7 +283,7 @@
     initial_location(local_globals).
 :- end_object.
 
-:- object(bed, extends(entity), imports(surface, container)).
+:- object(bed, extends(entity), imports([surface, container])).
     :- info([comment is 'Bed (in multiple rooms)']).
     desc("bed").
     synonym([bed]).
@@ -540,7 +540,7 @@
 %%  FOYER OBJECTS
 %% ===================================================================
 
-:- object(foyer_table, extends(entity), imports(surface, container)).
+:- object(foyer_table, extends(entity), imports([surface, container])).
     :- info([comment is 'Marble-top table in the foyer']).
     desc("marble-top table").
     synonym([table]).
@@ -560,11 +560,11 @@
 :- end_object.
 
 %% ===================================================================
-%%  LIBRARY — EVIDENCE AND KEY OBJECTS
+%%  LIBRARY - EVIDENCE AND KEY OBJECTS
 %% ===================================================================
 
-:- object(library_desk, extends(entity), imports(surface, container)).
-    :- info([comment is 'Large executive desk in the library — key evidence location']).
+:- object(library_desk, extends(entity), imports([surface, container])).
+    :- info([comment is 'Large executive desk in the library - key evidence location']).
     synonym([desk]).
     adjective([large, executive]).
     desc("desk").
@@ -573,7 +573,7 @@
     initial_location(library).
 :- end_object.
 
-:- object(note_paper, extends(entity), imports(takeable, readable)).
+:- object(note_paper, extends(entity), imports([takeable, readable])).
     :- info([comment is 'Note pad on the library desk']).
     synonym([pad, paper, notepad]).
     adjective([note, white]).
@@ -584,8 +584,8 @@
     read_text("The notepad contains some scrawled figures and the name \"Baxter\" underlined several times.").
 :- end_object.
 
-:- object(desk_calendar, extends(entity), imports(takeable, readable)).
-    :- info([comment is 'Desk calendar — shows recent appointments']).
+:- object(desk_calendar, extends(entity), imports([takeable, readable])).
+    :- info([comment is 'Desk calendar - shows recent appointments']).
     desc("desk calendar").
     synonym([calendar, july]).
     adjective([desk]).
@@ -593,8 +593,8 @@
     initial_location(library_desk).
 :- end_object.
 
-:- object(tray, extends(entity), imports(takeable, surface, container)).
-    :- info([comment is 'Tea tray beside the library desk — crime scene']).
+:- object(tray, extends(entity), imports([takeable, surface, container])).
+    :- info([comment is 'Tea tray beside the library desk - crime scene']).
     desc("tray").
     fdesc("Beside the desk is a large collapsible tray.").
     synonym([tray]).
@@ -606,7 +606,7 @@
 :- end_object.
 
 :- object(cup, extends(entity), imports(takeable)).
-    :- info([comment is 'Overturned teacup in library — key evidence']).
+    :- info([comment is 'Overturned teacup in library - key evidence']).
     synonym([cup, teacup]).
     adjective([tea, beautiful]).
     desc("cup").
@@ -617,7 +617,7 @@
 :- end_object.
 
 :- object(saucer, extends(entity), imports(takeable)).
-    :- info([comment is 'Overturned saucer in library — key evidence']).
+    :- info([comment is 'Overturned saucer in library - key evidence']).
     synonym([saucer]).
     adjective([beautiful]).
     desc("saucer").
@@ -627,7 +627,7 @@
     initial_location(library).
 :- end_object.
 
-:- object(trash_basket, extends(entity), imports(takeable, container)).
+:- object(trash_basket, extends(entity), imports([takeable, container])).
     :- info([comment is 'Wastepaper basket in library']).
     synonym([basket]).
     adjective([wastep, wicker, trash]).
@@ -639,7 +639,7 @@
     initial_location(library).
 :- end_object.
 
-:- object(trash, extends(entity), imports(takeable, readable)).
+:- object(trash, extends(entity), imports([takeable, readable])).
     :- info([comment is 'Crumpled papers in the wastepaper basket']).
     synonym([trash, papers]).
     adjective([crumpled]).
@@ -654,7 +654,7 @@ information to allow even a guess about the intent of the letter.").
 :- end_object.
 
 :- object(library_carpet, extends(entity)).
-    :- info([comment is 'Library carpet — fingerprint evidence']).
+    :- info([comment is 'Library carpet - fingerprint evidence']).
     synonym([carpet, rug]).
     desc("carpet").
     initial_flags([ndescbit]).
@@ -662,7 +662,7 @@ information to allow even a guess about the intent of the letter.").
 :- end_object.
 
 :- object(library_door, extends(entity), imports(readable)).
-    :- info([comment is 'The broken library door — evidence of locked-room mystery']).
+    :- info([comment is 'The broken library door - evidence of locked-room mystery']).
     desc("oak door").
     synonym([door]).
     adjective([oak, broken]).
@@ -674,7 +674,7 @@ clear that the door was securely locked from the inside when it was broken down.
 :- end_object.
 
 :- object(library_button, extends(entity)).
-    :- info([comment is 'Hidden black button in library — opens hidden door']).
+    :- info([comment is 'Hidden black button in library - opens hidden door']).
     synonym([button]).
     adjective([black]).
     desc("black button").
@@ -683,7 +683,7 @@ clear that the door was securely locked from the inside when it was broken down.
 :- end_object.
 
 :- object(mud_spot, extends(entity), imports(readable)).
-    :- info([comment is 'Mud spots on library floor — key evidence']).
+    :- info([comment is 'Mud spots on library floor - key evidence']).
     desc("mud spots").
     synonym([spot, mark, dirt, mud]).
     adjective([dried]).
@@ -725,7 +725,7 @@ the balcony and the desk.").
 :- end_object.
 
 :- object(safe, extends(entity), imports(container)).
-    :- info([comment is 'Wall safe in the hidden closet — contains key evidence']).
+    :- info([comment is 'Wall safe in the hidden closet - contains key evidence']).
     desc("safe").
     synonym([combination, safe, door]).
     adjective([safe, wall, large]).
@@ -743,11 +743,11 @@ the balcony and the desk.").
 :- end_object.
 
 %% ===================================================================
-%%  KEY EVIDENCE — Documents
+%%  KEY EVIDENCE - Documents
 %% ===================================================================
 
-:- object(baxter_papers, extends(entity), imports(takeable, readable)).
-    :- info([comment is 'Incriminating papers in the safe — key evidence']).
+:- object(baxter_papers, extends(entity), imports([takeable, readable])).
+    :- info([comment is 'Incriminating papers in the safe - key evidence']).
     synonym([stack, papers]).
     fdesc("A stack of papers bound together is in the safe.").
     desc("stack of papers").
@@ -759,8 +759,8 @@ embezzled by Baxter and tell how the scandal was hushed up. This evidence would 
 sufficient to convict Mr. Baxter in the Focus case.").
 :- end_object.
 
-:- object(new_will, extends(entity), imports(takeable, readable)).
-    :- info([comment is 'New will in the safe — key evidence']).
+:- object(new_will, extends(entity), imports([takeable, readable])).
+    :- info([comment is 'New will in the safe - key evidence']).
     desc("new will").
     synonym([will]).
     adjective([new]).
@@ -770,8 +770,8 @@ sufficient to convict Mr. Baxter in the Focus case.").
 estate to his wife.").
 :- end_object.
 
-:- object(newspaper, extends(entity), imports(takeable, readable)).
-    :- info([comment is 'Daily Herald newspaper — arrives at tick 175']).
+:- object(newspaper, extends(entity), imports([takeable, readable])).
+    :- info([comment is 'Daily Herald newspaper - arrives at tick 175']).
     fdesc("Leaning against the front door is today's issue of the Daily Herald.").
     desc("Daily Herald").
     synonym([newspaper, herald, section, paper]).
@@ -788,8 +788,8 @@ estate to his wife.").
     initial_location(global_objects).
 :- end_object.
 
-:- object(envelope, extends(entity), imports(takeable, readable, container)).
-    :- info([comment is 'Handwritten envelope — arrives with morning mail']).
+:- object(envelope, extends(entity), imports([takeable, readable, container])).
+    :- info([comment is 'Handwritten envelope - arrives with morning mail']).
     fdesc("A handwritten envelope, recently delivered, is lying on the table.").
     desc("handwritten envelope").
     synonym([envelope]).
@@ -800,8 +800,8 @@ estate to his wife.").
 Mrs. Marshall Robner\n506 Lake View Rd.\nMaitland, Ct.").
 :- end_object.
 
-:- object(letter, extends(entity), imports(takeable, readable)).
-    :- info([comment is 'Letter from Steven inside the envelope — key evidence']).
+:- object(letter, extends(entity), imports([takeable, readable])).
+    :- info([comment is 'Letter from Steven inside the envelope - key evidence']).
     desc("letter").
     synonym([letter]).
     initial_flags([takebit, readbit, burnbit]).
@@ -817,8 +817,8 @@ that, should the unthinkable happen, you will be provided for as you deserve.\n 
 see you Friday as usual.\n\nLove,\nSteven\"").
 :- end_object.
 
-:- object(lab_report, extends(entity), imports(takeable, readable)).
-    :- info([comment is 'Lab report — arrives after fragment analysis']).
+:- object(lab_report, extends(entity), imports([takeable, readable])).
+    :- info([comment is 'Lab report - arrives after fragment analysis']).
     desc("lab report").
     synonym([report, paper, note, slip]).
     adjective([lab]).
@@ -842,7 +842,7 @@ Arthur Chatworth, Pathologist").
 %% ===================================================================
 
 :- object(ladder, extends(entity), imports(takeable)).
-    :- info([comment is 'Wooden ladder in the shed — needed for balcony access']).
+    :- info([comment is 'Wooden ladder in the shed - needed for balcony access']).
     synonym([ladder]).
     adjective([wooden]).
     desc("wooden ladder").
@@ -868,7 +868,7 @@ Arthur Chatworth, Pathologist").
     initial_location(shed_room).
 :- end_object.
 
-:- object(s_shelves, extends(entity), imports(surface, container)).
+:- object(s_shelves, extends(entity), imports([surface, container])).
     :- info([comment is 'Shelves in the shed']).
     synonym([shelves]).
     desc("shelf").
@@ -882,7 +882,7 @@ Arthur Chatworth, Pathologist").
 %% ===================================================================
 
 :- object(hole, extends(entity)).
-    :- info([comment is 'Holes in the rose garden — key evidence location']).
+    :- info([comment is 'Holes in the rose garden - key evidence location']).
     desc("holes").
     synonym([hole, holes]).
     adjective([deep]).
@@ -891,7 +891,7 @@ Arthur Chatworth, Pathologist").
 :- end_object.
 
 :- object(fragment, extends(entity), imports(takeable)).
-    :- info([comment is 'Porcelain fragment in rose garden hole — key evidence']).
+    :- info([comment is 'Porcelain fragment in rose garden hole - key evidence']).
     desc("fragment").
     synonym([piece, porcelain, fragment, shard]).
     initial_flags([invisible, takebit]).
@@ -899,7 +899,7 @@ Arthur Chatworth, Pathologist").
 :- end_object.
 
 :- object(sugar_bowl, extends(entity), imports(takeable)).
-    :- info([comment is 'Sugar bowl on the library tray — contains LoBlo']).
+    :- info([comment is 'Sugar bowl on the library tray - contains LoBlo']).
     desc("sugar bowl").
     fdesc("Sitting on the tray is a bowl containing a white powdery substance.").
     synonym([bowl, sugar, substance, powder]).
@@ -922,7 +922,7 @@ Arthur Chatworth, Pathologist").
     initial_location(dunbar_bath).
 :- end_object.
 
-:- object(loblo_bottle, extends(entity), imports(takeable, readable, container)).
+:- object(loblo_bottle, extends(entity), imports([takeable, readable, container])).
     :- info([comment is "Bottle of LoBlo in Dunbar's medicine cabinet"]).
     desc("bottle of LoBlo").
     synonym([bottle, loblo, label]).
@@ -948,7 +948,7 @@ prior to using these tablets.").
     initial_location(loblo_bottle).
 :- end_object.
 
-:- object(aspirin_bottle, extends(entity), imports(takeable, readable, container)).
+:- object(aspirin_bottle, extends(entity), imports([takeable, readable, container])).
     :- info([comment is "Aspirin bottle in Dunbar's cabinet"]).
     desc("bottle of aspirin").
     fdesc("On the top shelf, among various toilet items, is a bottle of aspirin.").
@@ -970,7 +970,7 @@ prior to using these tablets.").
     initial_location(aspirin_bottle).
 :- end_object.
 
-:- object(dum_kof_bottle, extends(entity), imports(takeable, readable, container)).
+:- object(dum_kof_bottle, extends(entity), imports([takeable, readable, container])).
     :- info([comment is 'Cough medicine bottle in Dunbar\'s cabinet']).
     desc("bottle of cough medicine").
     fdesc("Standing on a shelf beside some nail polish is a bottle of cough medicine.").
@@ -1008,7 +1008,7 @@ when taken with other drugs.").
     initial_location(master_bath).
 :- end_object.
 
-:- object(master_bath_counter, extends(entity), imports(surface, container)).
+:- object(master_bath_counter, extends(entity), imports([surface, container])).
     :- info([comment is 'Counter in master bathroom']).
     desc("counter").
     synonym([counter]).
@@ -1035,7 +1035,7 @@ when taken with other drugs.").
     initial_location(master_bath).
 :- end_object.
 
-:- object(sneezo_bottle, extends(entity), imports(takeable, readable, container)).
+:- object(sneezo_bottle, extends(entity), imports([takeable, readable, container])).
     :- info([comment is 'Sneezo decongestant bottle on master bath counter']).
     desc("bottle of Sneezo brand decongestant").
     synonym([bottle, decong, sneezo]).
@@ -1058,7 +1058,7 @@ Take 1 tablet every 3 hours as needed\n\nSniffle Labs\nSneezo Tablets").
     initial_location(sneezo_bottle).
 :- end_object.
 
-:- object(allergone_bottle, extends(entity), imports(takeable, readable, container)).
+:- object(allergone_bottle, extends(entity), imports([takeable, readable, container])).
     :- info([comment is 'Allergone bottle on master bath counter']).
     desc("bottle of Allergone").
     synonym([bottle, allergone]).
@@ -1098,7 +1098,7 @@ of the reach of children!").
     initial_location(master_bedroom).
 :- end_object.
 
-:- object(four_poster, extends(entity), imports(surface, container)).
+:- object(four_poster, extends(entity), imports([surface, container])).
     :- info([comment is 'Four-poster bed in master bedroom']).
     desc("four-poster bed").
     synonym([bed, poster]).
@@ -1129,8 +1129,8 @@ of the reach of children!").
 %%  LIBRARY MEDICINE
 %% ===================================================================
 
-:- object(ebullion_bottle, extends(entity), imports(takeable, readable, container)).
-    :- info([comment is 'Ebullion prescription bottle in library — key evidence']).
+:- object(ebullion_bottle, extends(entity), imports([takeable, readable, container])).
+    :- info([comment is 'Ebullion prescription bottle in library - key evidence']).
     desc("bottle of Ebullion").
     synonym([label, bottle, ebullion]).
     adjective([ebullion]).
@@ -1352,7 +1352,7 @@ of children. May be harmful or fatal in sufficient dosage.").
 %%  PANTRY OBJECTS
 %% ===================================================================
 
-:- object(p_shelves, extends(entity), imports(surface, container)).
+:- object(p_shelves, extends(entity), imports([surface, container])).
     :- info([comment is 'Wooden shelves in pantry']).
     desc("set of wooden shelves").
     synonym([shelves]).
@@ -1374,7 +1374,7 @@ of children. May be harmful or fatal in sufficient dosage.").
 %%  LIVING ROOM OBJECTS
 %% ===================================================================
 
-:- object(living_room_table, extends(entity), imports(surface, container)).
+:- object(living_room_table, extends(entity), imports([surface, container])).
     :- info([comment is 'Living room table']).
     desc("living room table").
     synonym([table, tables]).
@@ -1479,7 +1479,7 @@ of children. May be harmful or fatal in sufficient dosage.").
 %%  ROURKE BATH OBJECTS
 %% ===================================================================
 
-:- object(rourke_shelves, extends(entity), imports(surface, container)).
+:- object(rourke_shelves, extends(entity), imports([surface, container])).
     :- info([comment is "Shelves in Rourke's bathroom"]).
     desc("shelf").
     synonym([shelves, shelf]).
@@ -1492,7 +1492,7 @@ of children. May be harmful or fatal in sufficient dosage.").
 %%  CLOSET OBJECTS
 %% ===================================================================
 
-:- object(c11_shelves, extends(entity), imports(surface, container)).
+:- object(c11_shelves, extends(entity), imports([surface, container])).
     :- info([comment is 'Shelves in south upstairs closet']).
     desc("shelf").
     synonym([shelves, shelf]).
@@ -1509,7 +1509,7 @@ of children. May be harmful or fatal in sufficient dosage.").
     initial_location(c11_shelves).
 :- end_object.
 
-:- object(uc_shelves, extends(entity), imports(surface, container)).
+:- object(uc_shelves, extends(entity), imports([surface, container])).
     :- info([comment is 'Shelves in upstairs closet']).
     desc("shelf").
     synonym([shelves, shelf]).
@@ -1574,7 +1574,7 @@ of children. May be harmful or fatal in sufficient dosage.").
 %% ===================================================================
 
 :- object(pistol, extends(entity), imports(takeable)).
-    :- info([comment is 'Smoking gun — appears near Dunbar\'s body']).
+    :- info([comment is 'Smoking gun - appears near Dunbar\'s body']).
     desc("smoking gun").
     synonym([pistol, gun]).
     adjective([smoking]).
@@ -1584,7 +1584,7 @@ of children. May be harmful or fatal in sufficient dosage.").
 :- end_object.
 
 :- object(corpse, extends(entity)).
-    :- info([comment is 'Body of Ms. Dunbar — placed by event']).
+    :- info([comment is 'Body of Ms. Dunbar - placed by event']).
     desc("body of Ms. Dunbar").
     synonym([body, dunbar, corpse, stiff]).
     adjective([ms, bloody]).
@@ -1592,8 +1592,8 @@ of children. May be harmful or fatal in sufficient dosage.").
     %% Placed dynamically when Dunbar commits suicide
 :- end_object.
 
-:- object(suicide_note, extends(entity), imports(takeable, readable)).
-    :- info([comment is "Dunbar's suicide note — placed near her body"]).
+:- object(suicide_note, extends(entity), imports([takeable, readable])).
+    :- info([comment is "Dunbar's suicide note - placed near her body"]).
     desc("suicide note").
     synonym([note, handwr]).
     adjective([suicide]).
@@ -1612,7 +1612,7 @@ Please forgive me.\"").
 :- end_object.
 
 :- object(pen, extends(entity), imports(takeable)).
-    :- info([comment is 'Blue pen — placed dynamically']).
+    :- info([comment is 'Blue pen - placed dynamically']).
     desc("blue pen").
     synonym([pen]).
     adjective([blue]).
@@ -1652,14 +1652,6 @@ Please forgive me.\"").
     desc("search warrant").
     synonym([warrant]).
     adjective([search]).
-    initial_location(global_objects).
-:- end_object.
-
-:- object(global_call, extends(entity)).
-    :- info([comment is 'Phone call reference']).
-    desc("telephone conversation").
-    synonym([call, conversation, left, right]).
-    adjective([telephone, phone]).
     initial_location(global_objects).
 :- end_object.
 

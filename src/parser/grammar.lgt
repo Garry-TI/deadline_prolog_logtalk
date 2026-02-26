@@ -25,7 +25,7 @@
 
     %% parse(+Tokens, -Command)
     %% Parse a token list into a cmd/3 structure.
-    :- public parse/2.
+    :- public(parse/2).
     parse(Tokens, Command) :-
         phrase(command(Command), Tokens).
 
@@ -33,7 +33,7 @@
     %% TOP-LEVEL GRAMMAR
     %% ---------------------------------------------------------------
 
-    :- private command//1.
+    :- private(command//1).
     :- use_module(library(dcg/basics), []).
 
     command(cmd(v_walk, Dir, none)) -->
@@ -52,7 +52,7 @@
     %% ZIL: BRIEF, SUPER, VERBOSE, INVENTORY, QUIT, SAVE, etc.
     %% ---------------------------------------------------------------
 
-    :- private verb_command//1.
+    :- private(verb_command//1).
 
     verb_command(cmd(v_brief,    none, none)) --> [brief].
     verb_command(cmd(v_super,    none, none)) --> [super].
@@ -384,7 +384,7 @@
     %% NOUN PHRASE PARSING
     %% ---------------------------------------------------------------
 
-    :- private noun_phrase//1.
+    :- private(noun_phrase//1).
 
     %% Pronoun
     noun_phrase(pronoun(Type)) -->
@@ -395,7 +395,7 @@
         noun_words(Words), { Words \= [] }.
 
     %% Collect consecutive non-preposition, non-verb words as a noun phrase
-    :- private noun_words//1.
+    :- private(noun_words//1).
     noun_words([W|Rest]) -->
         [W],
         { \+ stop_word(W) },
@@ -403,7 +403,7 @@
     noun_words([]) --> [].
 
     %% Words that terminate a noun phrase
-    :- private stop_word/1.
+    :- private(stop_word/1).
     stop_word(with).
     stop_word(to).
     stop_word(in).

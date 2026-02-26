@@ -11,12 +11,12 @@
 %%%  Characters:
 %%%    0 = player
 %%%    1 = gardener (Mr. McNabb)
-%%%    2 = baxter (Mr. Baxter) — arrives at tick 115
-%%%    3 = dunbar (Ms. Dunbar) — starts in living room
-%%%    4 = george (George Robner) — starts in his bedroom
-%%%    5 = mrs_robner (Mrs. Robner) — starts in living room
-%%%    6 = rourke (Mrs. Rourke) — starts in kitchen
-%%%    7 = coates (Mr. Coates) — arrives at tick 230
+%%%    2 = baxter (Mr. Baxter) - arrives at tick 115
+%%%    3 = dunbar (Ms. Dunbar) - starts in living room
+%%%    4 = george (George Robner) - starts in his bedroom
+%%%    5 = mrs_robner (Mrs. Robner) - starts in living room
+%%%    6 = rourke (Mrs. Rourke) - starts in kitchen
+%%%    7 = coates (Mr. Coates) - arrives at tick 230
 %%%
 %%%  Copyright 1982 Infocom, Inc. (original game)
 %%%  Logtalk refactoring: see CLAUDE.md
@@ -76,7 +76,7 @@
 %% ===================================================================
 
 :- object(baxter, extends(npc), imports(person)).
-    :- info([comment is 'Mr. Baxter, the business attorney — arrives at tick 115']).
+    :- info([comment is 'Mr. Baxter, the business attorney - arrives at tick 115']).
     desc("Mr. Baxter").
     synonym([baxter]).
     adjective([mister, mr]).
@@ -84,7 +84,7 @@
     capacity(40).
     character_index(2).
 
-    %% Baxter has no initial location — placed by clock event
+    %% Baxter has no initial location - placed by clock event
     %% initial_location set dynamically in clock.lgt
 
     %% Baxter dialogue responses
@@ -113,7 +113,7 @@
 %% ===================================================================
 
 :- object(dunbar, extends(npc), imports(person)).
-    :- info([comment is 'Ms. Dunbar, the Robner secretary — starts in living room']).
+    :- info([comment is 'Ms. Dunbar, the Robner secretary - starts in living room']).
     desc("Ms. Dunbar").
     synonym([dunbar]).
     adjective([ms, mrs]).
@@ -128,7 +128,7 @@
     dialogue_response(loblo, "\"Yes, I take LoBlo for my blood pressure.\"").
     dialogue_response(letter, "She turns red. \"That's personal correspondence.\"").
     dialogue_response(robner, "\"Mr. Robner was a wonderful employer.\" She sniffles.").
-    dialogue_response(meeting, "She hesitates. \"I — I was here all morning.\"").
+    dialogue_response(meeting, "She hesitates. \"I - I was here all morning.\"").
 
     greet_response :-
         writeln("Ms. Dunbar looks up at you with red-rimmed eyes.").
@@ -149,7 +149,7 @@
 %% ===================================================================
 
 :- object(george, extends(npc), imports(person)).
-    :- info([comment is 'George Robner, the son — starts in his bedroom']).
+    :- info([comment is 'George Robner, the son - starts in his bedroom']).
     desc("George").
     adjective([george]).
     synonym([george, robner]).
@@ -183,7 +183,7 @@
 %% ===================================================================
 
 :- object(mrs_robner, extends(npc), imports(person)).
-    :- info([comment is 'Mrs. Robner, the widow — starts in living room']).
+    :- info([comment is 'Mrs. Robner, the widow - starts in living room']).
     desc("Mrs. Robner").
     synonym([robner, mother, leslie]).
     adjective([mrs, ms, leslie]).
@@ -220,7 +220,7 @@
 %% ===================================================================
 
 :- object(rourke, extends(npc), imports(person)).
-    :- info([comment is 'Mrs. Rourke, the housekeeper — starts in kitchen']).
+    :- info([comment is 'Mrs. Rourke, the housekeeper - starts in kitchen']).
     desc("Mrs. Rourke").
     synonym([rourke]).
     adjective([ms, mrs]).
@@ -252,17 +252,17 @@
 :- end_object.
 
 %% ===================================================================
-%%  MR. COATES (Attorney — Arrives at tick 230)
+%%  MR. COATES (Attorney - Arrives at tick 230)
 %% ===================================================================
 
 :- object(coates, extends(npc), imports(person)).
-    :- info([comment is 'Mr. Coates, another attorney — arrives ~tick 230']).
+    :- info([comment is 'Mr. Coates, another attorney - arrives ~tick 230']).
     desc("Mr. Coates").
     synonym([coates]).
     adjective([mr]).
     initial_flags([person]).
     character_index(7).
-    %% No initial location — placed by clock event
+    %% No initial location - placed by clock event
 
     %% Coates dialogue responses
     dialogue_response(will, "\"I handle the Robner estate accounts,\" he says carefully.").
@@ -284,7 +284,7 @@
 :- end_object.
 
 %% ===================================================================
-%%  MR. ROBNER (Deceased — global reference only)
+%%  MR. ROBNER (Deceased - global reference only)
 %% ===================================================================
 
 :- object(global_mr_robner, extends(npc), imports(person)).
@@ -303,7 +303,7 @@
 :- object(character_table).
     :- info([comment is 'Maps character indices to NPC atoms (ZIL GLOBAL-CHARACTER-TABLE)']).
 
-    :- public npc_for_index/2.
+    :- public(npc_for_index/2).
     npc_for_index(0, player).
     npc_for_index(1, gardener).
     npc_for_index(2, baxter).
@@ -313,7 +313,7 @@
     npc_for_index(6, rourke).
     npc_for_index(7, coates).
 
-    :- public all_npcs/1.
+    :- public(all_npcs/1).
     all_npcs([gardener, baxter, dunbar, george, mrs_robner, rourke, coates]).
 
 :- end_object.

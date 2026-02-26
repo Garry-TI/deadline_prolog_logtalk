@@ -16,6 +16,8 @@
         comment is 'Resolve noun phrases to game objects; check scope; handle pronouns.'
     ]).
 
+    :- uses(user, [member/2, memberchk/2, read_line_to_string/2, atom_string/2]).
+
     %% ---------------------------------------------------------------
     %% PUBLIC API
     %% ---------------------------------------------------------------
@@ -23,7 +25,7 @@
     %% resolve_command(+RawCmd, -ResolvedCmd)
     %% Take a cmd/3 with np(Words) or pronoun(Type) noun phrases
     %% and resolve them to game object atoms.
-    :- public resolve_command/2.
+    :- public(resolve_command/2).
     resolve_command(cmd(Verb, RawDO, RawIO), cmd(Verb, DO, IO)) :-
         resolve_np(RawDO, Verb, direct,   DO),
         resolve_np(RawIO, Verb, indirect, IO).
@@ -32,7 +34,7 @@
     %% NOUN PHRASE RESOLUTION
     %% ---------------------------------------------------------------
 
-    :- private resolve_np/4.
+    :- private(resolve_np/4).
 
     resolve_np(none, _, _, none) :- !.
 
@@ -63,7 +65,7 @@
     %% ZIL: P-IT-OBJECT (P-IT), P-HIM-HER global variables
     %% ---------------------------------------------------------------
 
-    :- private resolve_pronoun/2.
+    :- private(resolve_pronoun/2).
     resolve_pronoun(it, Entity) :-
         ( state::pronoun(it, Entity), Entity \= none ->
             check_pronoun_valid(it, Entity)
@@ -89,11 +91,11 @@
         ).
 
     %% Check pronoun referent is accessible: same room or in player inventory
-    :- private check_pronoun_valid/2.
+    :- private(check_pronoun_valid/2).
     check_pronoun_valid(_, Entity) :-
         ( is_accessible(Entity) -> true
         ;
-            %% ZIL: pronoun_room check — if in same room, valid
+            %% ZIL: pronoun_room check - if in same room, valid
             state::pronoun_room(_, Room),
             state::current_room(Room)
         ->  true
@@ -106,22 +108,30 @@
     %% ZIL: SNARF-OBJECTS + CLAUSE object matching
     %% ---------------------------------------------------------------
 
-    :- private find_candidates/2.
+    :- private(find_candidates/2).
     find_candidates(Words, Candidates) :-
         findall(Entity, (
             candidate_object(Entity),
             object_matches(Entity, Words)
         ), All),
         %% Prefer visible, accessible objects
-        include(is_accessible, All, Accessible),
+        filter_accessible(All, Accessible),
         ( Accessible \= [] ->
             Candidates = Accessible
         ;   Candidates = All
         ).
 
+    :- private(filter_accessible/2).
+    filter_accessible([], []).
+    filter_accessible([E|Es], Result) :-
+        ( is_accessible(E) ->
+            Result = [E|Rest], filter_accessible(Es, Rest)
+        ;   filter_accessible(Es, Result)
+        ).
+
     %% candidate_object(-Entity)
     %% Objects potentially visible to the player right now.
-    :- private candidate_object/1.
+    :- private(candidate_object/1).
     candidate_object(Entity) :-
         state::current_room(Room),
         (
@@ -142,13 +152,13 @@
             room_global_object(Room, Entity)
         ).
 
-    :- private room_global_object/2.
+    :- private(room_global_object/2).
     room_global_object(Room, Entity) :-
         catch(Room::global_objects(Globals), _, Globals = []),
         member(Entity, Globals).
 
     %% is_accessible(-Entity)
-    :- public is_accessible/1.
+    :- public(is_accessible/1).
     is_accessible(Entity) :-
         state::current_room(Room),
         (
@@ -173,7 +183,7 @@
     %%   - Additional words match the object's adjective/1
     %% ---------------------------------------------------------------
 
-    :- private object_matches/2.
+    :- private(object_matches/2).
     object_matches(Entity, Words) :-
         %% Must have at least one matching noun synonym
         has_matching_noun(Entity, Words),
@@ -183,13 +193,13 @@
             object_has_adjective(Entity, W)
         ).
 
-    :- private has_matching_noun/2.
+    :- private(has_matching_noun/2).
     has_matching_noun(Entity, Words) :-
         member(Word, Words),
         matches_noun(Entity, Word).
 
-    %% matches_noun/2 — check if Word is a valid noun for Entity
-    :- private matches_noun/2.
+    %% matches_noun/2 - check if Word is a valid noun for Entity
+    :- private(matches_noun/2).
     matches_noun(Entity, Word) :-
         ( catch(Entity::synonym(Syns), _, Syns = []) ->
             ( is_list(Syns) ->
@@ -202,7 +212,7 @@
         %% Entity name itself can be used as a noun
         Entity = Word.
 
-    :- private object_has_adjective/2.
+    :- private(object_has_adjective/2).
     object_has_adjective(Entity, Adj) :-
         ( catch(Entity::adjective(Adjs), _, Adjs = []) ->
             ( is_list(Adjs) ->
@@ -213,7 +223,7 @@
         ).
 
     %% Determine if Word is used as an adjective (not a main noun)
-    :- private is_adjective_word/2.
+    :- private(is_adjective_word/2).
     is_adjective_word(Entity, Word) :-
         \+ matches_noun(Entity, Word),
         object_has_adjective(Entity, Word).
@@ -224,30 +234,42 @@
     %% ZIL: SNARF-OBJECTS disambiguation pass + user prompt
     %% ---------------------------------------------------------------
 
-    :- private disambiguate/3.
+    :- private(disambiguate/3).
     disambiguate(Candidates, Words, Entity) :-
         %% Step 1: Prefer objects in room over inventory (for some verbs)
         state::current_room(Room),
-        include([E]>>(state::location(E, Room)), Candidates, InRoom),
+        filter_in_location(Candidates, Room, InRoom),
         ( InRoom = [Entity] -> ! ; true ),
 
         %% Step 2: Prefer player inventory
-        include([E]>>(state::location(E, player)), Candidates, InInv),
+        filter_in_location(Candidates, player, InInv),
         ( InInv = [Entity] -> ! ; true ),
 
         %% Step 3: Ask player to disambiguate
         !,
         ask_disambiguation(Candidates, Words, Entity).
 
+    :- private(filter_in_location/3).
+    filter_in_location([], _, []).
+    filter_in_location([E|Es], Loc, Result) :-
+        ( state::location(E, Loc) ->
+            Result = [E|Rest], filter_in_location(Es, Loc, Rest)
+        ;   filter_in_location(Es, Loc, Result)
+        ).
+
     disambiguate([Entity|_], _, Entity).  % fallback: pick first
 
-    :- private ask_disambiguation/3.
+    :- private(print_candidate_list/1).
+    print_candidate_list([]).
+    print_candidate_list([C|Cs]) :-
+        ( catch(C::desc(D), _, D = C) -> true ; D = C ),
+        format("  - ~w~n", [D]),
+        print_candidate_list(Cs).
+
+    :- private(ask_disambiguation/3).
     ask_disambiguation(Candidates, _Words, Entity) :-
         writeln("Which do you mean:"),
-        maplist([C]>>(
-            ( catch(C::desc(D), _, D = C) -> true ; D = C ),
-            format("  - ~w~n", [D])
-        ), Candidates),
+        print_candidate_list(Candidates),
         write("? "),
         read_term_from_atom('', _, []),  % flush
         read_line_to_string(user_input, Line),
@@ -260,7 +282,7 @@
             ( Matches = [Entity] -> true
             ; Matches = [] ->
                 writeln("I don't see that here."), fail
-            ;   Entity = Matches  % still ambiguous — pick first
+            ;   Entity = Matches  % still ambiguous - pick first
             )
         ).
 
@@ -270,28 +292,28 @@
     %% IN-ROOM, HAVE, MANY, TAKE, etc.
     %% ---------------------------------------------------------------
 
-    %% in_scope_held(+Entity) — entity is carried by player (HELD/CARRIED)
-    :- public in_scope_held/1.
+    %% in_scope_held(+Entity) - entity is carried by player (HELD/CARRIED)
+    :- public(in_scope_held/1).
     in_scope_held(Entity) :-
         state::location(Entity, player).
 
-    %% in_scope_in_room(+Entity) — entity is in current room (IN-ROOM)
-    :- public in_scope_in_room/1.
+    %% in_scope_in_room(+Entity) - entity is in current room (IN-ROOM)
+    :- public(in_scope_in_room/1).
     in_scope_in_room(Entity) :-
         state::current_room(Room),
         state::location(Entity, Room),
         \+ state::has_flag(Entity, invisible).
 
-    %% in_scope_on_ground(+Entity) — entity is in room (ON-GROUND)
+    %% in_scope_on_ground(+Entity) - entity is in room (ON-GROUND)
     %% ZIL ON-GROUND includes room-level objects
-    :- public in_scope_on_ground/1.
+    :- public(in_scope_on_ground/1).
     in_scope_on_ground(Entity) :-
         state::current_room(Room),
         state::location(Entity, Room),
         \+ state::has_flag(Entity, invisible).
 
-    %% in_scope_any(+Entity) — held or in room (catch-all scope)
-    :- public in_scope_any/1.
+    %% in_scope_any(+Entity) - held or in room (catch-all scope)
+    :- public(in_scope_any/1).
     in_scope_any(Entity) :-
         ( in_scope_held(Entity) ; in_scope_in_room(Entity) ).
 
@@ -301,7 +323,7 @@
     %% ZIL: SETG P-IT-OBJECT / SETG P-HIM-HER
     %% ---------------------------------------------------------------
 
-    :- public update_pronoun_it/1.
+    :- public(update_pronoun_it/1).
     update_pronoun_it(Entity) :-
         state::current_room(Room),
         state::retractall(pronoun(it, _)),
@@ -309,7 +331,7 @@
         state::retractall(pronoun_room(it, _)),
         state::assertz(pronoun_room(it, Room)).
 
-    :- public update_pronoun_him_her/1.
+    :- public(update_pronoun_him_her/1).
     update_pronoun_him_her(Entity) :-
         state::current_room(Room),
         state::retractall(pronoun(him_her, _)),
@@ -323,7 +345,7 @@
     %% ---------------------------------------------------------------
 
     %% parse_and_resolve(+InputString, -ResolvedCmd)
-    :- public parse_and_resolve/2.
+    :- public(parse_and_resolve/2).
     parse_and_resolve(Input, ResolvedCmd) :-
         lexer::tokenize(Input, Tokens),
         ( Tokens = [] ->
@@ -346,13 +368,13 @@
     %% UTILITIES
     %% ---------------------------------------------------------------
 
-    %% entity_desc(+Entity, -Desc) — get short description for error messages
-    :- public entity_desc/2.
+    %% entity_desc(+Entity, -Desc) - get short description for error messages
+    :- public(entity_desc/2).
     entity_desc(Entity, Desc) :-
         ( catch(Entity::desc(D), _, D = Entity) -> Desc = D ; Desc = Entity ).
 
-    %% intersection/3 — list intersection
-    :- private intersection/3.
+    %% intersection/3 - list intersection
+    :- private(intersection/3).
     intersection([], _, []).
     intersection([H|T], L2, [H|R]) :-
         memberchk(H, L2), !,

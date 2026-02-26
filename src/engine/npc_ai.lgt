@@ -18,6 +18,8 @@
         comment is 'NPC movement AI: transit lines, goal pursuit, scheduled movement.'
     ]).
 
+    :- uses(user, [nth0/3, append/3, member/2, numlist/3, reverse/2]).
+
     %% ---------------------------------------------------------------
     %% TRANSIT LINES
     %% ZIL: TOP-OF-THE-LINE, BOTTOM-LINE, OUTSIDE-LINE, FOOD-LINE
@@ -25,7 +27,7 @@
     %% ---------------------------------------------------------------
 
     %% transit_line(+LineId, -RoomList)
-    :- public transit_line/2.
+    :- public(transit_line/2).
 
     %% Upstairs hallway (library side → staircase → shall rooms)
     transit_line(top_line, [
@@ -55,7 +57,7 @@
     %% Which transit line a room belongs to (for pathfinding).
     %% ---------------------------------------------------------------
 
-    :- public room_line/2.
+    :- public(room_line/2).
 
     room_line(library_balcony,  top_line).
     room_line(library,          top_line).
@@ -111,7 +113,7 @@
 
     %% Transfer points between lines
     %% ZIL: STAIRS for top↔bottom, FRONT-PATH/FOYER for outside↔bottom
-    :- public transfer_point/3.
+    :- public(transfer_point/3).
     transfer_point(top_line,     bottom_line,  stair_top).
     transfer_point(top_line,     bottom_line,  stairs).
     transfer_point(bottom_line,  top_line,     stair_bottom).
@@ -127,7 +129,7 @@
     %% ZIL: ESTABLISH-GOAL routine in goal.zil
     %% ---------------------------------------------------------------
 
-    :- public establish_goal/2.
+    :- public(establish_goal/2).
     establish_goal(NPC, Destination) :-
         state::location(NPC, CurrentRoom),
         ( state::npc_goal(NPC, _) ->
@@ -148,7 +150,7 @@
     %% Uses transit lines with transfers.
     %% ---------------------------------------------------------------
 
-    :- private build_path/3.
+    :- private(build_path/3).
     build_path(From, To, []) :-
         From = To, !.
 
@@ -169,23 +171,29 @@
             Path = [To]
         ).
 
-    :- private line_path/4.
+    :- private(line_path/4).
     line_path(Line, From, To, Path) :-
         transit_line(Line, Rooms),
         ( nth0(I, Rooms, From), nth0(J, Rooms, To) ->
             ( I =< J ->
                 numlist(I, J, Indices),
-                maplist([Idx, R]>>(nth0(Idx, Rooms, R)), Indices, Path0),
+                indices_to_rooms(Indices, Rooms, Path0),
                 Path0 = [_|Path]  % drop From (already there)
             ;
                 numlist(J, I, Indices),
                 reverse(Indices, RevIdx),
-                maplist([Idx, R]>>(nth0(Idx, Rooms, R)), RevIdx, Path0),
+                indices_to_rooms(RevIdx, Rooms, Path0),
                 Path0 = [_|Path]
             )
         ;
             Path = [To]  % fallback
         ).
+
+    :- private(indices_to_rooms/3).
+    indices_to_rooms([], _, []).
+    indices_to_rooms([Idx|Is], Rooms, [R|Rs]) :-
+        nth0(Idx, Rooms, R),
+        indices_to_rooms(Is, Rooms, Rs).
 
     %% ---------------------------------------------------------------
     %% FOLLOW GOAL
@@ -193,7 +201,7 @@
     %% ZIL: FOLLOW-GOAL routine in goal.zil
     %% ---------------------------------------------------------------
 
-    :- public follow_goal/1.
+    :- public(follow_goal/1).
     follow_goal(NPC) :-
         ( state::npc_goal_enabled(NPC),
           state::npc_goal(NPC, Path),
@@ -213,7 +221,7 @@
         ;   true
         ).
 
-    :- private goal_reached/1.
+    :- private(goal_reached/1).
     goal_reached(_NPC) :- true.  % NPCs handle their own arrival events
 
     %% ---------------------------------------------------------------
@@ -222,7 +230,7 @@
     %% ZIL: MOVE-PERSON routine in goal.zil
     %% ---------------------------------------------------------------
 
-    :- public move_npc/2.
+    :- public(move_npc/2).
     move_npc(NPC, Where) :-
         state::location(NPC, OldRoom),
         state::current_room(Here),
@@ -230,7 +238,7 @@
         narrate_movement(NPC, OldRoom, Where, Here),
         state::move_entity(NPC, Where).
 
-    :- private narrate_movement/4.
+    :- private(narrate_movement/4).
     narrate_movement(NPC, OldRoom, NewRoom, Here) :-
         ( OldRoom = Here ->
             %% NPC leaving player's room
@@ -251,7 +259,7 @@
 
     %% npc_schedule(+NPC, -Schedule)
     %% Schedule: list of schedule_entry(TickOffset, MaxJitter, Destination)
-    :- public npc_schedule/2.
+    :- public(npc_schedule/2).
 
     npc_schedule(gardener, [
         entry(60,  10, north_lawn),   % 9-10 AM
@@ -306,7 +314,7 @@
     %% Call once per move for each NPC to advance their schedule.
     %% ---------------------------------------------------------------
 
-    :- public tick_npc/1.
+    :- public(tick_npc/1).
     tick_npc(NPC) :-
         ( state::npc_goal_enabled(NPC) ->
             follow_goal(NPC)
@@ -315,7 +323,7 @@
 
     %% Start all NPC movement schedules.
     %% ZIL: START-MOVEMENT routine
-    :- public start_movement/0.
+    :- public(start_movement/0).
     start_movement :-
         clock::queue_and_enable(npc_ai::tick_gardener, 1),
         clock::queue_and_enable(npc_ai::tick_dunbar, 1),
@@ -328,33 +336,33 @@
     %% ZIL: I-GARDENER, I-DUNBAR, I-GEORGE, I-MRS-ROBNER, I-ROURKE
     %% ---------------------------------------------------------------
 
-    :- public tick_gardener/0.
+    :- public(tick_gardener/0).
     tick_gardener :-
         advance_schedule(gardener),
         clock::queue_and_enable(npc_ai::tick_gardener, 1).
 
-    :- public tick_dunbar/0.
+    :- public(tick_dunbar/0).
     tick_dunbar :-
         advance_schedule(dunbar),
         clock::queue_and_enable(npc_ai::tick_dunbar, 1).
 
-    :- public tick_george/0.
+    :- public(tick_george/0).
     tick_george :-
         advance_schedule(george),
         clock::queue_and_enable(npc_ai::tick_george, 1).
 
-    :- public tick_mrs_robner/0.
+    :- public(tick_mrs_robner/0).
     tick_mrs_robner :-
         advance_schedule(mrs_robner),
         clock::queue_and_enable(npc_ai::tick_mrs_robner, 1).
 
-    :- public tick_rourke/0.
+    :- public(tick_rourke/0).
     tick_rourke :-
         advance_schedule(rourke),
         clock::queue_and_enable(npc_ai::tick_rourke, 1).
 
-    %% advance_schedule/1 — check if it's time for NPC to move to next destination
-    :- private advance_schedule/1.
+    %% advance_schedule/1 - check if it's time for NPC to move to next destination
+    :- private(advance_schedule/1).
     advance_schedule(NPC) :-
         tick_npc(NPC).
 
@@ -363,10 +371,10 @@
     %% ZIL: I-BAXTER-ARRIVE, I-COATES-ARRIVE
     %% ---------------------------------------------------------------
 
-    :- public i_baxter_arrive/0.
+    :- public(i_baxter_arrive/0).
     i_baxter_arrive :-
         state::set_global(baxter_arrived, true),
-        state::assertz(state::location(baxter, front_path)),
+        state::assertz(location(baxter, front_path)),
         state::current_room(Here),
         ( Here = foyer ; Here = front_path ; Here = south_lawn ->
             writeln("There is a knock at the front door.")
@@ -374,10 +382,10 @@
         ),
         establish_goal(baxter, living_room).
 
-    :- public i_coates_arrive/0.
+    :- public(i_coates_arrive/0).
     i_coates_arrive :-
         state::set_global(coates_arrived, true),
-        state::assertz(state::location(coates, front_path)),
+        state::assertz(location(coates, front_path)),
         state::current_room(Here),
         ( Here = foyer ; Here = front_path ->
             writeln("A police car pulls up outside.")
@@ -387,10 +395,10 @@
 
     %% ---------------------------------------------------------------
     %% ATTENTION / FOLLOW SYSTEM
-    %% ZIL: I-FOLLOW, I-ATTENTION — NPCs notice the player nearby
+    %% ZIL: I-FOLLOW, I-ATTENTION - NPCs notice the player nearby
     %% ---------------------------------------------------------------
 
-    :- public i_follow/0.
+    :- public(i_follow/0).
     i_follow :-
         %% Check if any NPC wants to follow or block the player
         state::current_room(Here),
@@ -403,12 +411,12 @@
         ),
         clock::queue_and_enable(npc_ai::i_follow, 1).
 
-    :- private npc_should_react/2.
+    :- private(npc_should_react/2).
     npc_should_react(gardener, _Here) :-
         state::global_val(gardener_angry, true).
     npc_should_react(_, _) :- false.
 
-    :- private npc_react/1.
+    :- private(npc_react/1).
     npc_react(gardener) :-
         state::global_val(gardener_angry, true),
         writeln("Mr. McNabb blocks your path angrily, muttering about his roses.").

@@ -21,10 +21,10 @@
         comment is 'Provides take/drop behavior. Corresponds to ZIL TAKEBIT.'
     ]).
 
-    :- public can_take/0.
+    :- public(can_take/0).
     can_take.
 
-    :- public take_action/0.
+    :- public(take_action/0).
     take_action :-
         self(Self),
         state::current_actor(Actor),
@@ -40,7 +40,7 @@
         state::retractall(pronoun_room(it, _)),
         state::assertz(pronoun_room(it, R)).
 
-    :- public drop_action/0.
+    :- public(drop_action/0).
     drop_action :-
         self(Self),
         state::current_room(Room),
@@ -63,10 +63,10 @@
         comment is 'Container behavior. Corresponds to ZIL CONTBIT.'
     ]).
 
-    :- public can_contain/0.
+    :- public(can_contain/0).
     can_contain.
 
-    :- public put_in_action/1.
+    :- public(put_in_action/1).
     put_in_action(Item) :-
         self(Self),
         ( state::has_flag(Self, openbit) ->
@@ -77,7 +77,7 @@
             format("The ~w is closed.~n", [D])
         ).
 
-    :- public list_contents/0.
+    :- public(list_contents/0).
     list_contents :-
         self(Self),
         self::desc(D),
@@ -106,10 +106,10 @@
         comment is 'Door behavior (open/close/lock). ZIL DOORBIT.'
     ]).
 
-    :- public is_door/0.
+    :- public(is_door/0).
     is_door.
 
-    :- public open_action/0.
+    :- public(open_action/0).
     open_action :-
         self(Self),
         ( state::has_flag(Self, openbit) ->
@@ -124,7 +124,7 @@
             format("Opened.~n", [])
         ).
 
-    :- public close_action/0.
+    :- public(close_action/0).
     close_action :-
         self(Self),
         ( state::has_flag(Self, openbit) ->
@@ -136,7 +136,7 @@
             format("The ~w is already closed.~n", [D])
         ).
 
-    :- public lock_action/1.
+    :- public(lock_action/1).
     lock_action(KeyObj) :-
         self(Self),
         ( state::has_flag(Self, lockbit) ->
@@ -148,7 +148,7 @@
             format("Locked.~n", [])
         ).
 
-    :- public unlock_action/1.
+    :- public(unlock_action/1).
     unlock_action(KeyObj) :-
         self(Self),
         ( state::has_flag(Self, lockbit) ->
@@ -175,7 +175,7 @@
         comment is 'Lockable objects (doors/containers that need a key).'
     ]).
 
-    :- public required_key/1.
+    :- public(required_key/1).
     :- multifile required_key/1.
 
 :- end_category.
@@ -193,29 +193,29 @@
         comment is 'NPC person behavior. Corresponds to ZIL PERSON flag.'
     ]).
 
-    :- public is_person/0.
+    :- public(is_person/0).
     is_person.
 
-    %% dialogue_response(+Topic, -Response) — NPC dialogue
-    :- public dialogue_response/2.
+    %% dialogue_response(+Topic, -Response) - NPC dialogue
+    :- public(dialogue_response/2).
     :- multifile dialogue_response/2.
 
-    %% give_response(+Item) — NPC reaction to being given an item
-    :- public give_response/1.
+    %% give_response(+Item) - NPC reaction to being given an item
+    :- public(give_response/1).
     :- multifile give_response/1.
     give_response(_) :-
         self::desc(D),
         format("~w doesn't want that.~n", [D]).
 
-    %% show_response(+Item) — NPC reaction to being shown an item
-    :- public show_response/1.
+    %% show_response(+Item) - NPC reaction to being shown an item
+    :- public(show_response/1).
     :- multifile show_response/1.
     show_response(_) :-
         self::desc(D),
         format("~w looks at it carefully.~n", [D]).
 
-    %% greet_response — NPC reaction to HELLO
-    :- public greet_response/0.
+    %% greet_response - NPC reaction to HELLO
+    :- public(greet_response/0).
     :- multifile greet_response/0.
     greet_response :-
         self::desc(D),
@@ -236,16 +236,16 @@
         comment is 'Surface objects (tables, shelves). ZIL SURFACEBIT.'
     ]).
 
-    :- public can_place_on/0.
+    :- public(can_place_on/0).
     can_place_on.
 
-    :- public put_on_action/1.
+    :- public(put_on_action/1).
     put_on_action(Item) :-
         self(Self),
         state::move_entity(Item, Self),
         format("Done.~n", []).
 
-    :- public list_surface/0.
+    :- public(list_surface/0).
     list_surface :-
         self(Self),
         self::desc(D),
@@ -273,10 +273,10 @@
         comment is 'Readable objects (books, papers, signs). ZIL READBIT.'
     ]).
 
-    :- public read_text/1.
+    :- public(read_text/1).
     :- multifile read_text/1.
 
-    :- public read_action/0.
+    :- public(read_action/0).
     read_action :-
         ( self::read_text(Text) ->
             writeln(Text)
@@ -300,7 +300,7 @@
         comment is 'Light-producing objects. ZIL LIGHTBIT/BURNBIT/FLAMEBIT.'
     ]).
 
-    :- public turn_on_action/0.
+    :- public(turn_on_action/0).
     turn_on_action :-
         self(Self),
         ( state::has_flag(Self, onbit) ->
@@ -312,7 +312,7 @@
             format("The ~w is now on.~n", [D])
         ).
 
-    :- public turn_off_action/0.
+    :- public(turn_off_action/0).
     turn_off_action :-
         self(Self),
         ( state::has_flag(Self, onbit) ->

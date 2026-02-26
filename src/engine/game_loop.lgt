@@ -16,19 +16,21 @@
         comment is 'Main game loop and action dispatch (mirrors ZIL PERFORM pipeline).'
     ]).
 
+    :- uses(user, [read_line_to_string/2, string_length/2, memberchk/2]).
+
     %% ---------------------------------------------------------------
     %% CONSTANTS
     %% ZIL: M-FATAL, M-HANDLED, M-NOT-HANDLED, M-BEG, M-END, M-ENTER, M-LOOK
     %% ---------------------------------------------------------------
 
     %% Action result codes (return values from action handlers)
-    :- public result/1.
+    :- public(result/1).
     result(m_fatal).      % fatal: halt current action chain
     result(m_handled).    % handled: don't pass to next handler
     result(m_not_handled).% not handled: pass to next handler
 
     %% Room action phases
-    :- public phase/1.
+    :- public(phase/1).
     phase(m_beg).    % before action
     phase(m_end).    % after action
     phase(m_enter).  % entering room
@@ -39,7 +41,7 @@
     %% ZIL: GO routine in main.zil
     %% ---------------------------------------------------------------
 
-    :- public go/0.
+    :- public(go/0).
     go :-
         %% Initialize game state
         globals_init::initialize,
@@ -55,7 +57,7 @@
         %% Enter main loop
         main_loop.
 
-    :- private print_banner/0.
+    :- private(print_banner/0).
     print_banner :-
         nl,
         writeln("DEADLINE"),
@@ -73,14 +75,14 @@
     %% Reads player input, dispatches action, runs clock, repeats.
     %% ---------------------------------------------------------------
 
-    :- public main_loop/0.
+    :- public(main_loop/0).
     main_loop :-
         repeat,
             read_command,
         fail.
     main_loop.
 
-    :- private read_command/0.
+    :- private(read_command/0).
     read_command :-
         nl,
         write("> "),
@@ -91,7 +93,7 @@
             process_input(Input)
         ).
 
-    :- private process_input/1.
+    :- private(process_input/1).
     process_input(Input) :-
         ( resolver::parse_and_resolve(Input, cmd(Verb, DO, IO)) ->
             %% Update context: clear qcontext if player left room
@@ -104,7 +106,7 @@
         ).
 
     %% Commands that don't advance the clock
-    :- private skip_clock/1.
+    :- private(skip_clock/1).
     skip_clock(v_brief).
     skip_clock(v_super).
     skip_clock(v_verbose).
@@ -120,11 +122,11 @@
 
     %% ---------------------------------------------------------------
     %% QCONTEXT CHECK
-    %% ZIL: QCONTEXT-CHECK — if player typed WHAT/FIND/TELL, redirect
+    %% ZIL: QCONTEXT-CHECK - if player typed WHAT/FIND/TELL, redirect
     %% to the NPC being addressed (QCONTEXT).
     %% ---------------------------------------------------------------
 
-    :- private update_qcontext/0.
+    :- private(update_qcontext/0).
     update_qcontext :-
         state::current_room(Here),
         ( state::global_val(qcontext_room, QRoom), QRoom \= Here ->
@@ -133,7 +135,7 @@
         ;   true
         ).
 
-    :- public qcontext_redirect/1.
+    :- public(qcontext_redirect/1).
     qcontext_redirect(DO) :-
         state::global_val(qcontext, QCtx),
         QCtx \= none,
@@ -151,7 +153,7 @@
 
     %% ---------------------------------------------------------------
     %% PERFORM
-    %% ZIL: PERFORM routine — chain-of-responsibility action dispatch.
+    %% ZIL: PERFORM routine - chain-of-responsibility action dispatch.
     %%
     %% Priority order (mirrors ZIL):
     %%   1. Winner (current actor) action handler
@@ -163,16 +165,16 @@
     %%   7. Room action handler (M-END phase)
     %% ---------------------------------------------------------------
 
-    :- public perform/3.
+    :- public(perform/3).
     perform(Verb, DO, IO) :-
         %% Save previous action for AGAIN
         ( Verb \= v_again ->
             state::retractall(global_val(last_verb, _)),
             state::retractall(global_val(last_do, _)),
             state::retractall(global_val(last_io, _)),
-            state::assertz(state::global_val(last_verb, Verb)),
-            state::assertz(state::global_val(last_do, DO)),
-            state::assertz(state::global_val(last_io, IO))
+            state::assertz(global_val(last_verb, Verb)),
+            state::assertz(global_val(last_do, DO)),
+            state::assertz(global_val(last_io, IO))
         ;   true
         ),
         %% Resolve any pronouns in DO/IO
@@ -184,12 +186,12 @@
         %% Dispatch through the pipeline
         dispatch(Verb, ResDO, ResIO).
 
-    :- private resolve_objects/5.
+    :- private(resolve_objects/5).
     resolve_objects(_Verb, DO, IO, ResDO, ResIO) :-
         resolve_one(DO, ResDO),
         resolve_one(IO, ResIO).
 
-    :- private resolve_one/2.
+    :- private(resolve_one/2).
     resolve_one(none, none) :- !.
     resolve_one(pair(Prep, Obj), pair(Prep, ResObj)) :-
         !,
@@ -205,7 +207,7 @@
         resolver::resolve_np(np(Words), _, direct, Entity).
     resolve_one(Entity, Entity).  % already an atom
 
-    :- private update_pronouns/2.
+    :- private(update_pronouns/2).
     update_pronouns(DO, _IO) :-
         ( atom(DO), DO \= none ->
             ( state::has_flag(DO, person) ->
@@ -215,7 +217,7 @@
         ;   true
         ).
 
-    :- private dispatch/3.
+    :- private(dispatch/3).
     dispatch(Verb, DO, IO) :-
         state::current_actor(Actor),
         state::current_room(Room),
@@ -253,11 +255,11 @@
         ; format("I don't know how to do that.~n", [])
         ).
 
-    :- private io_obj/2.
+    :- private(io_obj/2).
     io_obj(pair(_, Obj), Obj) :- !.
     io_obj(Obj, Obj).
 
-    :- private call_verb/3.
+    :- private(call_verb/3).
     call_verb(Verb, DO, IO) :-
         ( catch(verbs::dispatch_verb(Verb, DO, IO), _, fail) -> true
         ; true
@@ -268,7 +270,7 @@
     %% Called when player enters a room or types LOOK.
     %% ---------------------------------------------------------------
 
-    :- public describe_current_room/0.
+    :- public(describe_current_room/0).
     describe_current_room :-
         state::current_room(Room),
         %% Room name banner
@@ -299,7 +301,7 @@
     %% Handle player walking in a direction.
     %% ---------------------------------------------------------------
 
-    :- public move_player/1.
+    :- public(move_player/1).
     move_player(Direction) :-
         state::current_room(Room),
         ( catch(Room::get_exit(Direction, Target), _, fail) ->
@@ -324,12 +326,12 @@
     %% GAME OVER / QUIT
     %% ---------------------------------------------------------------
 
-    :- public game_over/1.
+    :- public(game_over/1).
     game_over(Message) :-
         nl, writeln(Message), nl,
         halt.
 
-    :- public confirm_quit/0.
+    :- public(confirm_quit/0).
     confirm_quit :-
         write("Are you sure you want to quit? (y/n) "),
         read_line_to_string(user_input, Ans),

@@ -18,6 +18,8 @@
         comment is 'Event queue and game clock. Manages time, queues events, fires them on tick.'
     ]).
 
+    :- uses(user, [random_between/3]).
+
     %% ---------------------------------------------------------------
     %% PUBLIC API
     %% ---------------------------------------------------------------
@@ -26,7 +28,7 @@
     %% Register an event to fire after Delay ticks.
     %% If Routine already in queue, update its countdown.
     %% ZIL: <QUEUE routine tick>
-    :- public queue_event/2.
+    :- public(queue_event/2).
     queue_event(Routine, Delay) :-
         state::global_val(present_time, T),
         FireAt is T + Delay,
@@ -40,7 +42,7 @@
     %% queue_demon(+Routine, +Delay)
     %% Register a daemon (runs every tick, not one-shot).
     %% ZIL: <DEMON routine tick>
-    :- public queue_demon/2.
+    :- public(queue_demon/2).
     queue_demon(Routine, Delay) :-
         state::global_val(present_time, T),
         FireAt is T + Delay,
@@ -54,7 +56,7 @@
     %% enable_event(+Routine)
     %% Mark an event as active (it will fire when its time comes).
     %% ZIL: <ENABLE ...>
-    :- public enable_event/1.
+    :- public(enable_event/1).
     enable_event(Routine) :-
         ( state::event_enabled(Routine) -> true
         ; state::assertz(event_enabled(Routine))
@@ -63,13 +65,13 @@
     %% disable_event(+Routine)
     %% Prevent an event from firing (keep it queued but inactive).
     %% ZIL: <DISABLE ...>
-    :- public disable_event/1.
+    :- public(disable_event/1).
     disable_event(Routine) :-
         state::retractall(event_enabled(Routine)).
 
     %% queue_and_enable(+Routine, +Delay)
     %% Queue and immediately enable an event (common pattern in ZIL).
-    :- public queue_and_enable/2.
+    :- public(queue_and_enable/2).
     queue_and_enable(Routine, Delay) :-
         queue_event(Routine, Delay),
         enable_event(Routine).
@@ -77,9 +79,9 @@
     %% clocker
     %% Advance time by one tick and fire all due enabled events.
     %% ZIL: CLOCKER routine in clock.zil
-    :- public clocker/0.
+    :- public(clocker/0).
     clocker :-
-        %% ZIL: CLOCK-WAIT check — skip this tick if set
+        %% ZIL: CLOCK-WAIT check - skip this tick if set
         ( state::global_val(clock_wait, true) ->
             state::set_global(clock_wait, false)
         ;
@@ -94,7 +96,7 @@
     %%      PRESENT-TIME = total ticks since game start
     %% ---------------------------------------------------------------
 
-    :- private advance_time/0.
+    :- private(advance_time/0).
     advance_time :-
         %% Increment total tick counter
         state::increment_global(present_time, _, _),
@@ -113,9 +115,9 @@
         ;   state::set_global(moves, M1)
         ).
 
-    %% check_deadline/0 — end game if time limit exceeded
+    %% check_deadline/0 - end game if time limit exceeded
     %% ZIL: <COND (<G? ,PRESENT-TIME 1199> ... <QUIT>)>
-    :- private check_deadline/0.
+    :- private(check_deadline/0).
     check_deadline :-
         state::global_val(present_time, T),
         ( T > 1199 ->
@@ -130,8 +132,8 @@
         ;   true
         ).
 
-    %% fire_events/0 — fire all enabled events whose countdown has expired
-    :- private fire_events/0.
+    %% fire_events/0 - fire all enabled events whose countdown has expired
+    :- private(fire_events/0).
     fire_events :-
         state::global_val(present_time, T),
         %% Check all enabled events
@@ -143,7 +145,7 @@
             fire_one(Routine, T)
         ).
 
-    :- private fire_one/2.
+    :- private(fire_one/2).
     fire_one(Routine, _T) :-
         ( call(Routine) -> true ; true ),  % fire event; ignore failure
         %% Remove one-shot events; leave demons for re-queue
@@ -160,7 +162,7 @@
     %% Called once during initialization (first move after GO).
     %% ---------------------------------------------------------------
 
-    :- public start_interrupts/0.
+    :- public(start_interrupts/0).
     start_interrupts :-
         random_between(1, 40, Rnd1),
         queue_and_enable(events::i_newspaper, 175 + Rnd1),
@@ -176,8 +178,8 @@
     %% CLOCK DISPLAY
     %% ---------------------------------------------------------------
 
-    %% display_time/0 — show the current time (score=hour, moves=minutes)
-    :- public display_time/0.
+    %% display_time/0 - show the current time (score=hour, moves=minutes)
+    :- public(display_time/0).
     display_time :-
         state::global_val(score, H),
         state::global_val(moves, M),

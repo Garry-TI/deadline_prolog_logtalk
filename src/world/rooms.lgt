@@ -12,11 +12,11 @@
 %%%  Logtalk refactoring: see CLAUDE.md
 
 %% ===================================================================
-%%  EXTERIOR — Grounds of Robner Estate
+%%  EXTERIOR - Grounds of Robner Estate
 %% ===================================================================
 
 :- object(south_lawn, extends(room)).
-    :- info([comment is 'South Lawn — starting location']).
+    :- info([comment is 'South Lawn - starting location']).
     desc("South Lawn").
     ldesc("You are on a wide lawn just north of the entrance to the Robner \
 estate. Directly north at the end of a pebbled path is the Robner house, \
@@ -36,7 +36,7 @@ most probably, your job.").
 :- end_object.
 
 :- object(front_path, extends(room)).
-    :- info([comment is 'Front Path — leads to front door']).
+    :- info([comment is 'Front Path - leads to front door']).
     desc("Front Path").
     synonym([path]).
     adjective([front]).
@@ -176,7 +176,7 @@ lake lies to the west.").
 :- end_object.
 
 :- object(shed_room, extends(room)).
-    :- info([comment is 'Shed — garden tool storage']).
+    :- info([comment is 'Shed - garden tool storage']).
     desc("Shed").
     ldesc("This small garden shed is filled with implements of gardening and \
 lawn care. Shelves filled with various tools line the walls and a filthy window \
@@ -211,7 +211,7 @@ enter the shed via the door around the corner.").
 :- end_object.
 
 :- object(rose_garden, extends(room)).
-    :- info([comment is 'Garden Path — rose garden entrance']).
+    :- info([comment is 'Garden Path - rose garden entrance']).
     desc("Garden Path").
     synonym([path]).
     adjective([garden, rose, flower]).
@@ -230,7 +230,7 @@ enter the shed via the door around the corner.").
 :- end_object.
 
 :- object(in_roses, extends(room)).
-    :- info([comment is 'Among the Roses — key evidence location']).
+    :- info([comment is 'Among the Roses - key evidence location']).
     desc("Among the Roses").
     initial_flags([rlandbit, onbit]).
     exit(up, library_balcony, [flag, ladder_flag]).
@@ -310,11 +310,11 @@ the leaves rustling in the orchard to the southeast.").
 :- end_object.
 
 %% ===================================================================
-%%  FIRST FLOOR — Robner House Interior
+%%  FIRST FLOOR - Robner House Interior
 %% ===================================================================
 
 :- object(foyer, extends(room)).
-    :- info([comment is 'Foyer — house entrance']).
+    :- info([comment is 'Foyer - house entrance']).
     desc("Foyer").
     synonym([foyer]).
     initial_flags([rlandbit, onbit]).
@@ -327,7 +327,7 @@ the leaves rustling in the orchard to the southeast.").
 :- end_object.
 
 :- object(nfoyer, extends(room)).
-    :- info([comment is 'North of Foyer — hallway']).
+    :- info([comment is 'North of Foyer - hallway']).
     desc("North of Foyer").
     ldesc("This is a hallway north of the foyer. To the west is an open \
 doorway, and to the east is the foot of a staircase. The hall continues north.").
@@ -355,7 +355,7 @@ doorway, and to the east is the foot of a staircase. The hall continues north.")
 :- end_object.
 
 :- object(corner, extends(room)).
-    :- info([comment is 'Corner — hallway junction']).
+    :- info([comment is 'Corner - hallway junction']).
     desc("Corner").
     ldesc("You are at the corner of two halls, one a short hallway to the west \
 ending with a set of doors, and the other a long hall leading south toward the \
@@ -497,7 +497,7 @@ lead west and south.").
 %% ===================================================================
 
 :- object(stairs, extends(room)).
-    :- info([comment is 'Stairs — mid-landing']).
+    :- info([comment is 'Stairs - mid-landing']).
     desc("Stairs").
     ldesc("You are on a landing halfway up the flight of stairs. You notice \
 that the stairs do indeed make quite a noise when stepped upon.").
@@ -511,7 +511,7 @@ that the stairs do indeed make quite a noise when stepped upon.").
 :- end_object.
 
 %% ===================================================================
-%%  SECOND FLOOR — Robner House
+%%  SECOND FLOOR - Robner House
 %% ===================================================================
 
 :- object(stair_top, extends(room)).
@@ -543,7 +543,7 @@ and south and a corridor the length of the house heads west.").
 :- end_object.
 
 :- object(corridor_2, extends(room)).
-    :- info([comment is 'Hallway (middle, 2nd floor) — linen closet']).
+    :- info([comment is 'Hallway (middle, 2nd floor) - linen closet']).
     desc("Hallway").
     ldesc("This is approximately the middle of the corridor, a convenient place \
 for a closet full of linens. Stairs to the east and a window to the west are \
@@ -570,7 +570,7 @@ about equidistant. The closet, to the north, is open and rather shallow.").
 :- end_object.
 
 :- object(corridor_4, extends(room)).
-    :- info([comment is 'End of Hallway (2nd floor) — library entrance']).
+    :- info([comment is 'End of Hallway (2nd floor) - library entrance']).
     desc("End of Hallway").
     initial_flags([rlandbit, onbit]).
     exit(east, corridor_3, always).
@@ -582,7 +582,7 @@ about equidistant. The closet, to the north, is open and rather shallow.").
 :- end_object.
 
 :- object(library, extends(room)).
-    :- info([comment is 'Library — crime scene']).
+    :- info([comment is 'Library - crime scene']).
     desc("Library").
     synonym([library]).
     initial_flags([rlandbit, onbit]).
@@ -595,7 +595,7 @@ about equidistant. The closet, to the north, is open and rather shallow.").
 :- end_object.
 
 :- object(library_balcony, extends(room)).
-    :- info([comment is 'Library Balcony — overlooking rose garden']).
+    :- info([comment is 'Library Balcony - overlooking rose garden']).
     desc("Library Balcony").
     synonym([balcony]).
     adjective([library]).
@@ -609,7 +609,7 @@ about equidistant. The closet, to the north, is open and rather shallow.").
 :- end_object.
 
 :- object(upstairs_closet, extends(room)).
-    :- info([comment is 'Upstairs Closet — linen storage']).
+    :- info([comment is 'Upstairs Closet - linen storage']).
     desc("Upstairs Closet").
     ldesc("The closet is rather shallow and has some shelves full of assorted \
 linens, towels, and uninteresting toilet articles.").
@@ -624,7 +624,7 @@ linens, towels, and uninteresting toilet articles.").
 :- end_object.
 
 :- object(hidden_closet, extends(room)).
-    :- info([comment is 'Hidden Closet — secret passage']).
+    :- info([comment is 'Hidden Closet - secret passage']).
     desc("Hidden Closet").
     synonym([closet]).
     adjective([hidden]).
@@ -637,7 +637,7 @@ linens, towels, and uninteresting toilet articles.").
 :- end_object.
 
 :- object(master_bedroom, extends(room)).
-    :- info([comment is 'Master Bedroom — Robners\' room']).
+    :- info([comment is 'Master Bedroom - Robners\' room']).
     desc("Master Bedroom").
     synonym([bedroom, room]).
     adjective([master, robner]).
@@ -788,7 +788,7 @@ equipment and supplies.").
 :- end_object.
 
 %% ===================================================================
-%%  SPECIAL ROOM — Debug/Kludge
+%%  SPECIAL ROOM - Debug/Kludge
 %% ===================================================================
 
 :- object(xxx, extends(room)).

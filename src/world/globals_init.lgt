@@ -20,7 +20,9 @@
         comment is 'Asserts initial game state. Call globals_init::initialize/0 at startup.'
     ]).
 
-    :- public initialize/0.
+    :- uses(user, [member/2]).
+
+    :- public(initialize/0).
     initialize :-
         init_global_vars,
         init_npc_locations,
@@ -33,62 +35,62 @@
     %% GLOBAL VARIABLES (ZIL GLOBAL definitions + GO routine SETG calls)
     %% ---------------------------------------------------------------
 
-    :- private init_global_vars/0.
+    :- private(init_global_vars/0).
     init_global_vars :-
         %% From clock.zil + main.zil GO routine
-        assertz(state::global_val(present_time, 0)),    % ticks elapsed (max 1199)
-        assertz(state::global_val(score, 8)),            % hour of day (8am)
-        assertz(state::global_val(moves, 0)),            % moves within hour
-        assertz(state::global_val(load_max, 100)),       % carry limit
-        assertz(state::global_val(load_allowed, 100)),   % remaining carry
-        assertz(state::global_val(lit, true)),           % room is lit
-        assertz(state::global_val(p_won, false)),        % last parse succeeded
-        assertz(state::global_val(clock_wait, false)),   % skip next clock tick
-        assertz(state::global_val(verbose_mode, false)), % brief mode by default
+        state::assertz(global_val(present_time, 0)),    % ticks elapsed (max 1199)
+        state::assertz(global_val(score, 8)),            % hour of day (8am)
+        state::assertz(global_val(moves, 0)),            % moves within hour
+        state::assertz(global_val(load_max, 100)),       % carry limit
+        state::assertz(global_val(load_allowed, 100)),   % remaining carry
+        state::assertz(global_val(lit, true)),           % room is lit
+        state::assertz(global_val(p_won, false)),        % last parse succeeded
+        state::assertz(global_val(clock_wait, false)),   % skip next clock tick
+        state::assertz(global_val(verbose_mode, false)), % brief mode by default
         %% Ladder flags (controls balcony access)
-        assertz(state::global_val(ladder_flag, false)),
-        assertz(state::global_val(ladder_flag_2, false)),
+        state::assertz(global_val(ladder_flag, false)),
+        state::assertz(global_val(ladder_flag_2, false)),
         %% Gardener state
-        assertz(state::global_val(gardener_angry, false)),
+        state::assertz(global_val(gardener_angry, false)),
         %% Dialogue context
-        assertz(state::global_val(qcontext, none)),
-        assertz(state::global_val(qcontext_room, none)),
+        state::assertz(global_val(qcontext, none)),
+        state::assertz(global_val(qcontext_room, none)),
         %% Game progression flags
-        assertz(state::global_val(fragment_found, false)),
-        assertz(state::global_val(safe_opened, false)),
-        assertz(state::global_val(dunbar_dead, false)),
-        assertz(state::global_val(baxter_arrived, false)),
-        assertz(state::global_val(coates_arrived, false)),
+        state::assertz(global_val(fragment_found, false)),
+        state::assertz(global_val(safe_opened, false)),
+        state::assertz(global_val(dunbar_dead, false)),
+        state::assertz(global_val(baxter_arrived, false)),
+        state::assertz(global_val(coates_arrived, false)),
         %% Last action tracking (L-PRSA, L-PRSO, L-PRSI)
-        assertz(state::global_val(last_verb, none)),
-        assertz(state::global_val(last_do, none)),
-        assertz(state::global_val(last_io, none)).
+        state::assertz(global_val(last_verb, none)),
+        state::assertz(global_val(last_do, none)),
+        state::assertz(global_val(last_io, none)).
 
     %% ---------------------------------------------------------------
     %% NPC INITIAL LOCATIONS (ZIL: (IN room) properties on OBJECT)
     %% ---------------------------------------------------------------
 
-    :- private init_npc_locations/0.
+    :- private(init_npc_locations/0).
     init_npc_locations :-
         %% Player starts on South Lawn (GO routine: <SETG HERE ,SOUTH-LAWN>)
-        assertz(state::location(player, south_lawn)),
-        assertz(state::current_room(south_lawn)),
-        assertz(state::current_actor(player)),
+        state::assertz(location(player, south_lawn)),
+        state::assertz(current_room(south_lawn)),
+        state::assertz(current_actor(player)),
 
         %% Mr. McNabb (gardener) starts on North Lawn
-        assertz(state::location(gardener, north_lawn)),
+        state::assertz(location(gardener, north_lawn)),
 
         %% Ms. Dunbar starts in Living Room
-        assertz(state::location(dunbar, living_room)),
+        state::assertz(location(dunbar, living_room)),
 
         %% George starts in his bedroom
-        assertz(state::location(george, george_room)),
+        state::assertz(location(george, george_room)),
 
         %% Mrs. Robner starts in Living Room
-        assertz(state::location(mrs_robner, living_room)),
+        state::assertz(location(mrs_robner, living_room)),
 
         %% Mrs. Rourke starts in Kitchen
-        assertz(state::location(rourke, kitchen)),
+        state::assertz(location(rourke, kitchen)),
 
         %% Baxter and Coates have no initial location (arrive via events)
         true.
@@ -97,195 +99,195 @@
     %% OBJECT INITIAL LOCATIONS (ZIL: (IN room/container) properties)
     %% ---------------------------------------------------------------
 
-    :- private init_object_locations/0.
+    :- private(init_object_locations/0).
     init_object_locations :-
         %% Library desk and contents
-        assertz(state::location(library_desk, library)),
-        assertz(state::location(note_paper, library_desk)),
-        assertz(state::location(desk_calendar, library_desk)),
-        assertz(state::location(tray, library)),
-        assertz(state::location(sugar_bowl, tray)),
-        assertz(state::location(cup, library)),
-        assertz(state::location(saucer, library)),
-        assertz(state::location(trash_basket, library)),
-        assertz(state::location(trash, trash_basket)),
-        assertz(state::location(library_carpet, library)),
-        assertz(state::location(library_button, library)),
-        assertz(state::location(mud_spot, library)),
-        assertz(state::location(bookshelves, library)),
-        assertz(state::location(ebullion_bottle, library)),
-        assertz(state::location(ebullion, ebullion_bottle)),
+        state::assertz(location(library_desk, library)),
+        state::assertz(location(note_paper, library_desk)),
+        state::assertz(location(desk_calendar, library_desk)),
+        state::assertz(location(tray, library)),
+        state::assertz(location(sugar_bowl, tray)),
+        state::assertz(location(cup, library)),
+        state::assertz(location(saucer, library)),
+        state::assertz(location(trash_basket, library)),
+        state::assertz(location(trash, trash_basket)),
+        state::assertz(location(library_carpet, library)),
+        state::assertz(location(library_button, library)),
+        state::assertz(location(mud_spot, library)),
+        state::assertz(location(bookshelves, library)),
+        state::assertz(location(ebullion_bottle, library)),
+        state::assertz(location(ebullion, ebullion_bottle)),
 
         %% Hidden closet
-        assertz(state::location(red_button, hidden_closet)),
-        assertz(state::location(blue_button, hidden_closet)),
-        assertz(state::location(safe, hidden_closet)),
-        assertz(state::location(dust, hidden_closet)),
-        assertz(state::location(baxter_papers, safe)),
-        assertz(state::location(new_will, safe)),
+        state::assertz(location(red_button, hidden_closet)),
+        state::assertz(location(blue_button, hidden_closet)),
+        state::assertz(location(safe, hidden_closet)),
+        state::assertz(location(dust, hidden_closet)),
+        state::assertz(location(baxter_papers, safe)),
+        state::assertz(location(new_will, safe)),
 
         %% Foyer
-        assertz(state::location(foyer_table, foyer)),
-        assertz(state::location(crystal_lamp, foyer)),
+        state::assertz(location(foyer_table, foyer)),
+        state::assertz(location(crystal_lamp, foyer)),
 
         %% Living room
-        assertz(state::location(living_room_table, living_room)),
-        assertz(state::location(fireplace, living_room)),
-        assertz(state::location(wood_pile, living_room)),
-        assertz(state::location(portraits, living_room)),
-        assertz(state::location(lr_cabinets, living_room)),
+        state::assertz(location(living_room_table, living_room)),
+        state::assertz(location(fireplace, living_room)),
+        state::assertz(location(wood_pile, living_room)),
+        state::assertz(location(portraits, living_room)),
+        state::assertz(location(lr_cabinets, living_room)),
 
         %% Dining room
-        assertz(state::location(seurat, dining_room)),
-        assertz(state::location(paintings, dining_room)),
-        assertz(state::location(dining_room_table, dining_room)),
-        assertz(state::location(trestle_table, dining_room)),
+        state::assertz(location(seurat, dining_room)),
+        state::assertz(location(paintings, dining_room)),
+        state::assertz(location(dining_room_table, dining_room)),
+        state::assertz(location(trestle_table, dining_room)),
 
         %% Kitchen
-        assertz(state::location(cups, kitchen)),
-        assertz(state::location(saucers, kitchen)),
-        assertz(state::location(china, kitchen)),
-        assertz(state::location(plates, kitchen)),
-        assertz(state::location(shelf_unit, kitchen)),
-        assertz(state::location(appliance_1, kitchen)),
-        assertz(state::location(appliance_2, kitchen)),
-        assertz(state::location(k_cabinets, kitchen)),
-        assertz(state::location(silverware, k_cabinets)),
-        assertz(state::location(glasses, k_cabinets)),
+        state::assertz(location(cups, kitchen)),
+        state::assertz(location(saucers, kitchen)),
+        state::assertz(location(china, kitchen)),
+        state::assertz(location(plates, kitchen)),
+        state::assertz(location(shelf_unit, kitchen)),
+        state::assertz(location(appliance_1, kitchen)),
+        state::assertz(location(appliance_2, kitchen)),
+        state::assertz(location(k_cabinets, kitchen)),
+        state::assertz(location(silverware, k_cabinets)),
+        state::assertz(location(glasses, k_cabinets)),
 
         %% Pantry
-        assertz(state::location(p_shelves, pantry)),
-        assertz(state::location(foods, p_shelves)),
+        state::assertz(location(p_shelves, pantry)),
+        state::assertz(location(foods, p_shelves)),
 
         %% Shed
-        assertz(state::location(ladder, shed_room)),
-        assertz(state::location(tools_1, shed_room)),
-        assertz(state::location(tools_2, shed_room)),
-        assertz(state::location(s_shelves, shed_room)),
+        state::assertz(location(ladder, shed_room)),
+        state::assertz(location(tools_1, shed_room)),
+        state::assertz(location(tools_2, shed_room)),
+        state::assertz(location(s_shelves, shed_room)),
 
         %% Rose garden / orchard
-        assertz(state::location(hole, in_roses)),
-        assertz(state::location(fragment, in_roses)),
-        assertz(state::location(berry_bush, in_orchard)),
+        state::assertz(location(hole, in_roses)),
+        state::assertz(location(fragment, in_roses)),
+        state::assertz(location(berry_bush, in_orchard)),
 
         %% Dunbar's bathroom / cabinet
-        assertz(state::location(dunbar_cabinet, dunbar_bath)),
-        assertz(state::location(loblo_bottle, dunbar_cabinet)),
-        assertz(state::location(loblo, loblo_bottle)),
-        assertz(state::location(aspirin_bottle, dunbar_cabinet)),
-        assertz(state::location(aspirin, aspirin_bottle)),
-        assertz(state::location(dum_kof_bottle, dunbar_cabinet)),
-        assertz(state::location(dum_kof, dum_kof_bottle)),
+        state::assertz(location(dunbar_cabinet, dunbar_bath)),
+        state::assertz(location(loblo_bottle, dunbar_cabinet)),
+        state::assertz(location(loblo, loblo_bottle)),
+        state::assertz(location(aspirin_bottle, dunbar_cabinet)),
+        state::assertz(location(aspirin, aspirin_bottle)),
+        state::assertz(location(dum_kof_bottle, dunbar_cabinet)),
+        state::assertz(location(dum_kof, dum_kof_bottle)),
 
         %% Rourke's bathroom
-        assertz(state::location(rourke_shelves, rourke_bath)),
+        state::assertz(location(rourke_shelves, rourke_bath)),
 
         %% Master bedroom
-        assertz(state::location(master_bedroom_dresser, master_bedroom)),
-        assertz(state::location(four_poster, master_bedroom)),
-        assertz(state::location(lounge, master_bedroom)),
-        assertz(state::location(bedroom_mirror, master_bedroom)),
+        state::assertz(location(master_bedroom_dresser, master_bedroom)),
+        state::assertz(location(four_poster, master_bedroom)),
+        state::assertz(location(lounge, master_bedroom)),
+        state::assertz(location(bedroom_mirror, master_bedroom)),
 
         %% Master bathroom
-        assertz(state::location(bathtub, master_bath)),
-        assertz(state::location(master_bath_counter, master_bath)),
-        assertz(state::location(bathroom_mirror, master_bath)),
-        assertz(state::location(hanging_plants, master_bath)),
-        assertz(state::location(sneezo_bottle, master_bath_counter)),
-        assertz(state::location(sneezo, sneezo_bottle)),
-        assertz(state::location(allergone_bottle, master_bath_counter)),
-        assertz(state::location(allergone, allergone_bottle)),
+        state::assertz(location(bathtub, master_bath)),
+        state::assertz(location(master_bath_counter, master_bath)),
+        state::assertz(location(bathroom_mirror, master_bath)),
+        state::assertz(location(hanging_plants, master_bath)),
+        state::assertz(location(sneezo_bottle, master_bath_counter)),
+        state::assertz(location(sneezo, sneezo_bottle)),
+        state::assertz(location(allergone_bottle, master_bath_counter)),
+        state::assertz(location(allergone, allergone_bottle)),
 
         %% George's room/bath
-        assertz(state::location(liquor_cabinet, george_room)),
-        assertz(state::location(scotch, liquor_cabinet)),
-        assertz(state::location(bourbon, liquor_cabinet)),
-        assertz(state::location(stereo, george_room)),
-        assertz(state::location(records, george_room)),
-        assertz(state::location(tapes, george_room)),
-        assertz(state::location(shaving_gear, george_bath)),
+        state::assertz(location(liquor_cabinet, george_room)),
+        state::assertz(location(scotch, liquor_cabinet)),
+        state::assertz(location(bourbon, liquor_cabinet)),
+        state::assertz(location(stereo, george_room)),
+        state::assertz(location(records, george_room)),
+        state::assertz(location(tapes, george_room)),
+        state::assertz(location(shaving_gear, george_bath)),
 
         %% Balcony objects
-        assertz(state::location(l_railing, library_balcony)),
-        assertz(state::location(b_railing, bedroom_balcony)),
-        assertz(state::location(l_balcony, library_balcony)),
-        assertz(state::location(b_balcony, bedroom_balcony)),
-        assertz(state::location(tree_tops, bedroom_balcony)),
+        state::assertz(location(l_railing, library_balcony)),
+        state::assertz(location(b_railing, bedroom_balcony)),
+        state::assertz(location(l_balcony, library_balcony)),
+        state::assertz(location(b_balcony, bedroom_balcony)),
+        state::assertz(location(tree_tops, bedroom_balcony)),
 
         %% Corridor
-        assertz(state::location(corridor_window, corridor_4)),
+        state::assertz(location(corridor_window, corridor_4)),
 
         %% Guest room
-        assertz(state::location(guest_window, guest_room)),
+        state::assertz(location(guest_window, guest_room)),
 
         %% Upstairs closets
-        assertz(state::location(c11_shelves, closet_11)),
-        assertz(state::location(c11_linens, c11_shelves)),
-        assertz(state::location(uc_shelves, upstairs_closet)),
-        assertz(state::location(uc_linens, uc_shelves)),
-        assertz(state::location(uc_towels, uc_shelves)),
+        state::assertz(location(c11_shelves, closet_11)),
+        state::assertz(location(c11_linens, c11_shelves)),
+        state::assertz(location(uc_shelves, upstairs_closet)),
+        state::assertz(location(uc_linens, uc_shelves)),
+        state::assertz(location(uc_towels, uc_shelves)),
 
         %% East of door (exterior)
-        assertz(state::location(cornerstone, east_of_door)).
+        state::assertz(location(cornerstone, east_of_door)).
 
     %% ---------------------------------------------------------------
     %% OBJECT INITIAL FLAGS
     %% ---------------------------------------------------------------
 
-    :- private init_object_flags/0.
+    :- private(init_object_flags/0).
     init_object_flags :-
-        %% Doors — initial states
-        assertz(state::has_flag(south_closet_door, doorbit)),
-        assertz(state::has_flag(south_closet_door, contbit)),
-        assertz(state::has_flag(south_closet_door, openbit)),   % open
-        assertz(state::has_flag(front_door, doorbit)),
-        assertz(state::has_flag(front_door, contbit)),          % closed
-        assertz(state::has_flag(dunbar_bath_door, doorbit)),
-        assertz(state::has_flag(dunbar_bath_door, openbit)),    % open
-        assertz(state::has_flag(george_bath_door, doorbit)),
-        assertz(state::has_flag(george_bath_door, openbit)),    % open
-        assertz(state::has_flag(hidden_door_l, invisible)),     % hidden
-        assertz(state::has_flag(hidden_door_b, invisible)),     % hidden
+        %% Doors - initial states
+        state::assertz(has_flag(south_closet_door, doorbit)),
+        state::assertz(has_flag(south_closet_door, contbit)),
+        state::assertz(has_flag(south_closet_door, openbit)),   % open
+        state::assertz(has_flag(front_door, doorbit)),
+        state::assertz(has_flag(front_door, contbit)),          % closed
+        state::assertz(has_flag(dunbar_bath_door, doorbit)),
+        state::assertz(has_flag(dunbar_bath_door, openbit)),    % open
+        state::assertz(has_flag(george_bath_door, doorbit)),
+        state::assertz(has_flag(george_bath_door, openbit)),    % open
+        state::assertz(has_flag(hidden_door_l, invisible)),     % hidden
+        state::assertz(has_flag(hidden_door_b, invisible)),     % hidden
 
-        %% Bay window — closed initially
-        assertz(state::has_flag(bay_window, doorbit)),
-        assertz(state::has_flag(bay_window, contbit)),
+        %% Bay window - closed initially
+        state::assertz(has_flag(bay_window, doorbit)),
+        state::assertz(has_flag(bay_window, contbit)),
 
-        %% Key evidence items — initially invisible
-        assertz(state::has_flag(hole, invisible)),
-        assertz(state::has_flag(fragment, invisible)),
-        assertz(state::has_flag(mud_spot, invisible)),
-        assertz(state::has_flag(library_button, invisible)),
-        assertz(state::has_flag(baxter_papers, invisible)),
+        %% Key evidence items - initially invisible
+        state::assertz(has_flag(hole, invisible)),
+        state::assertz(has_flag(fragment, invisible)),
+        state::assertz(has_flag(mud_spot, invisible)),
+        state::assertz(has_flag(library_button, invisible)),
+        state::assertz(has_flag(baxter_papers, invisible)),
 
-        %% Containers — open initially
-        assertz(state::has_flag(library_desk, openbit)),
-        assertz(state::has_flag(trash_basket, openbit)),
-        assertz(state::has_flag(foyer_table, openbit)),
-        assertz(state::has_flag(tray, openbit)),
-        assertz(state::has_flag(safe, contbit)),   % NOT open — requires combination
-        assertz(state::has_flag(dunbar_cabinet, contbit)),
+        %% Containers - open initially
+        state::assertz(has_flag(library_desk, openbit)),
+        state::assertz(has_flag(trash_basket, openbit)),
+        state::assertz(has_flag(foyer_table, openbit)),
+        state::assertz(has_flag(tray, openbit)),
+        state::assertz(has_flag(safe, contbit)),   % NOT open - requires combination
+        state::assertz(has_flag(dunbar_cabinet, contbit)),
 
         %% NPC person flags
-        assertz(state::has_flag(player, person)),
-        assertz(state::has_flag(gardener, person)),
-        assertz(state::has_flag(gardener, openbit)),
-        assertz(state::has_flag(dunbar, person)),
-        assertz(state::has_flag(dunbar, openbit)),
-        assertz(state::has_flag(george, person)),
-        assertz(state::has_flag(george, openbit)),
-        assertz(state::has_flag(mrs_robner, person)),
-        assertz(state::has_flag(mrs_robner, openbit)),
-        assertz(state::has_flag(rourke, person)),
-        assertz(state::has_flag(rourke, openbit)),
-        assertz(state::has_flag(baxter, person)),
-        assertz(state::has_flag(coates, person)).
+        state::assertz(has_flag(player, person)),
+        state::assertz(has_flag(gardener, person)),
+        state::assertz(has_flag(gardener, openbit)),
+        state::assertz(has_flag(dunbar, person)),
+        state::assertz(has_flag(dunbar, openbit)),
+        state::assertz(has_flag(george, person)),
+        state::assertz(has_flag(george, openbit)),
+        state::assertz(has_flag(mrs_robner, person)),
+        state::assertz(has_flag(mrs_robner, openbit)),
+        state::assertz(has_flag(rourke, person)),
+        state::assertz(has_flag(rourke, openbit)),
+        state::assertz(has_flag(baxter, person)),
+        state::assertz(has_flag(coates, person)).
 
     %% ---------------------------------------------------------------
     %% ROOM INITIAL FLAGS
     %% ---------------------------------------------------------------
 
-    :- private init_room_flags/0.
+    :- private(init_room_flags/0).
     init_room_flags :-
         %% All rooms start lit (rlandbit + onbit)
         forall(
@@ -303,8 +305,8 @@
                 north_hall, guest_room, shall_11, shall_12, closet_11,
                 dunbar_bath, dunbar_room, george_bath, george_room
             ]),
-            ( assertz(state::has_flag(Room, rlandbit)),
-              assertz(state::has_flag(Room, onbit)) )
+            ( state::assertz(has_flag(Room, rlandbit)),
+              state::assertz(has_flag(Room, onbit)) )
         ).
 
     %% ---------------------------------------------------------------
@@ -312,13 +314,13 @@
     %% ZIL: <SETG P-HIM-HER ,MRS-ROBNER> / <SETG P-IT-OBJECT <>>
     %% ---------------------------------------------------------------
 
-    :- private init_pronouns/0.
+    :- private(init_pronouns/0).
     init_pronouns :-
         %% Initial HIM-HER pronoun is Mrs. Robner (from main.zil GO routine)
-        assertz(state::pronoun(him_her, mrs_robner)),
-        assertz(state::pronoun_room(him_her, foyer)),
+        state::assertz(pronoun(him_her, mrs_robner)),
+        state::assertz(pronoun_room(him_her, foyer)),
         %% IT pronoun starts unset
-        assertz(state::pronoun(it, none)),
-        assertz(state::pronoun_room(it, south_lawn)).
+        state::assertz(pronoun(it, none)),
+        state::assertz(pronoun_room(it, south_lawn)).
 
 :- end_object.

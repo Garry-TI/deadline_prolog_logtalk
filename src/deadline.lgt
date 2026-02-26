@@ -19,13 +19,13 @@
         comment is 'Deadline game entry point. Call go/0 to start.'
     ]).
 
-    :- public go/0.
+    :- public(go/0).
     go :-
         game_loop::go.
 
 :- end_object.
 
-%% Top-level convenience predicate — call from the Prolog prompt.
+%% Top-level convenience predicate - call from the Prolog prompt.
 :- initialization((
     assertz((go :- deadline::go))
 )).
