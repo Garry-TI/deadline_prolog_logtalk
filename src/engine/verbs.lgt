@@ -229,15 +229,15 @@
         ( state::has_flag(DO, contbit) ->
             ( state::has_flag(DO, openbit) ->
                 ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
-                ( state::location(_, DO) ->
+                findall(Item, (
+                    state::location(Item, DO),
+                    \+ state::has_flag(Item, invisible)
+                ), Items),
+                ( Items = [] ->
+                    format("The ~w is empty.~n", [D])
+                ;
                     format("The ~w contains:~n", [D]),
-                    forall(
-                        state::location(Item, DO),
-                        ( catch(Item::desc(ID), _, ID = Item) -> true ; ID = Item,
-                          format("  ~w~n", [ID])
-                        )
-                    )
-                ;   format("The ~w is empty.~n", [D])
+                    list_container_items(Items)
                 )
             ;
                 ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
@@ -245,6 +245,13 @@
             )
         ;   format("You can't look inside that.~n", [])
         ).
+
+    :- private(list_container_items/1).
+    list_container_items([]).
+    list_container_items([Item|Rest]) :-
+        ( catch(Item::desc(ID), _, ID = Item) -> true ; ID = Item ),
+        format("  ~w~n", [ID]),
+        list_container_items(Rest).
 
     %% ---------------------------------------------------------------
     %% LOOK UNDER/BEHIND/ON
@@ -387,8 +394,53 @@
             format("The ~w is locked.~n", [D])
         ;
             state::set_flag(DO, openbit),
-            writeln("Opened.")
+            ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
+            %% ZIL V-OPEN content display logic (verbs.zil lines 536-556)
+            ( state::has_flag(DO, doorbit) ->
+                format("The ~w is now open.~n", [D])
+            ;
+                %% Find visible children
+                findall(Child, (
+                    state::location(Child, DO),
+                    \+ state::has_flag(Child, invisible)
+                ), Children),
+                ( Children = [] ->
+                    writeln("Opened.")
+                ; Children = [Only] ->
+                    %% Single item: show its fdesc if it has one
+                    ( catch(Only::fdesc(FD), _, fail) ->
+                        format("The ~w opens.~n", [D]),
+                        writeln(FD)
+                    ;
+                        format("Opening the ~w reveals ", [D]),
+                        print_contents(Children),
+                        writeln(".")
+                    )
+                ;
+                    %% Multiple items: "Opening the X reveals a Y, a Z, and a W."
+                    format("Opening the ~w reveals ", [D]),
+                    print_contents(Children),
+                    writeln(".")
+                )
+            )
         ).
+
+    %% print_contents(+Items) - ZIL PRINT-CONTENTS: "a X, a Y, and a Z"
+    :- private(print_contents/1).
+    print_contents([]) :- !.
+    print_contents([Only]) :-
+        !,
+        ( catch(Only::desc(CD), _, CD = Only) -> true ; CD = Only ),
+        format("a ~w", [CD]).
+    print_contents([Item, Last]) :-
+        !,
+        ( catch(Item::desc(CD1), _, CD1 = Item) -> true ; CD1 = Item ),
+        ( catch(Last::desc(CD2), _, CD2 = Last) -> true ; CD2 = Last ),
+        format("a ~w, and a ~w", [CD1, CD2]).
+    print_contents([Item|Rest]) :-
+        ( catch(Item::desc(CD), _, CD = Item) -> true ; CD = Item ),
+        format("a ~w, ", [CD]),
+        print_contents(Rest).
 
     :- public(v_close/1).
     v_close(none) :- writeln("Close what?").

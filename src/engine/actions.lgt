@@ -671,9 +671,7 @@
 
     %% LIBRARY-DESK-F
     object_action(V, library_desk, _IO) :-
-        ( V = v_look_inside ->
-            writeln("There's nothing of interest in the desk.")
-        ; V = v_examine ->
+        ( V = v_examine ->
             writeln("It's a wide executive desk. A telephone sits on top."),
             %% List items on the desk
             ( state::location(note_paper, library_desk) ->
@@ -681,7 +679,11 @@
             ; true
             ),
             ( state::location(desk_calendar, library_desk) ->
-                writeln("A desk calendar is open to today's date.")
+                ( state::global_val(calendar_page, Page) ->
+                    format("A desk calendar is open to July ~w.~n", [Page])
+                ;
+                    writeln("A desk calendar is open to today's date.")
+                )
             ; true
             )
         ; fail
