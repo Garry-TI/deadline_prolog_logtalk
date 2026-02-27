@@ -185,6 +185,10 @@
             state::location(Container, player),
             state::has_flag(Container, openbit),
             state::location(Entity, Container)
+        ;
+            %% Room global objects (doors, scenery, etc.)
+            room_global_object(Room, Entity),
+            \+ state::has_flag(Entity, invisible)
         ).
 
     %% ---------------------------------------------------------------
@@ -198,9 +202,9 @@
     object_matches(Entity, Words) :-
         %% Must have at least one matching noun synonym
         has_matching_noun(Entity, Words),
-        %% All adjective words must match object's adjectives
+        %% Non-noun words are treated as adjectives and must match
         forall(
-            ( member(W, Words), is_adjective_word(Entity, W) ),
+            ( member(W, Words), \+ matches_noun(Entity, W) ),
             object_has_adjective(Entity, W)
         ).
 
