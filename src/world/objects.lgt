@@ -589,8 +589,16 @@
     desc("desk calendar").
     synonym([calendar, july]).
     adjective([desk]).
-    initial_flags([takebit, readbit, burnbit]).
+    initial_flags([takebit, readbit, burnbit, turnbit]).
     initial_location(library_desk).
+    %% Dynamic fdesc: shows current page (ZIL DESCFCN/M-OBJDESC handler)
+    :- uses(user, [format/3]).
+    fdesc(Desc) :-
+        ( state::global_val(calendar_page, Page) ->
+            format(atom(Desc), "A desk calendar is here, open to July ~w.", [Page])
+        ;
+            Desc = 'A desk calendar is here, open to July 7.'
+        ).
 :- end_object.
 
 :- object(tray, extends(entity), imports([takeable, surface, container])).

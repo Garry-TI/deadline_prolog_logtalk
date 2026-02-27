@@ -62,6 +62,10 @@
         state::assertz(global_val(dunbar_dead, false)),
         state::assertz(global_val(baxter_arrived, false)),
         state::assertz(global_val(coates_arrived, false)),
+        %% Calendar page (ZIL: CALENDAR-PAGE, default July 7)
+        state::assertz(global_val(calendar_page, 7)),
+        %% George calendar flag (ZIL: G-CALENDAR)
+        state::assertz(global_val(g_calendar, false)),
         %% Last action tracking (L-PRSA, L-PRSO, L-PRSI)
         state::assertz(global_val(last_verb, none)),
         state::assertz(global_val(last_do, none)),

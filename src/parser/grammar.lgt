@@ -140,7 +140,6 @@
     verb_command(cmd(v_open, DO, none))         --> [open], [up], noun_phrase(DO).
     verb_command(cmd(v_open, DO, pair(with, IO))) --> [open], noun_phrase(DO), [with], noun_phrase(IO).
     verb_command(cmd(v_close, DO, none))        --> [close], noun_phrase(DO).
-    verb_command(cmd(v_close, DO, none))        --> [turn], noun_phrase(DO).  % TURN as SHUT/CLOSE
     verb_command(cmd(v_lock, DO, pair(with, IO))) --> [lock], noun_phrase(DO), [with], noun_phrase(IO).
     verb_command(cmd(v_unlock, DO, none))       --> [unlock], noun_phrase(DO).
     verb_command(cmd(v_unlock, DO, pair(with, IO))) --> [unlock], noun_phrase(DO), [with], noun_phrase(IO).
@@ -164,6 +163,7 @@
     %% READ
     %% ---------------------------------------------------------------
 
+    verb_command(cmd(v_read, DO, pair(page, intnum(N)))) --> [read], noun_phrase(DO), number_token(N).
     verb_command(cmd(v_read, DO, none))           --> [read], noun_phrase(DO).
     verb_command(cmd(v_read, DO, pair(with, IO))) --> [read], noun_phrase(DO), [with], noun_phrase(IO).
     verb_command(cmd(v_read, DO, pair(with, IO))) --> [look], [at], noun_phrase(DO), [with], noun_phrase(IO).
@@ -285,9 +285,12 @@
     %% TURN (switch / rotate objects)
     %% ---------------------------------------------------------------
 
+    verb_command(cmd(v_turn, DO, pair(to, intnum(N)))) --> [turn], noun_phrase(DO), [to], number_token(N).
+    verb_command(cmd(v_turn, none, pair(to, intnum(N)))) --> [turn], [to], number_token(N).
+    verb_command(cmd(v_turn, DO, pair(to, IO))) --> [turn], noun_phrase(DO), [to], noun_phrase(IO).
+    verb_command(cmd(v_turn, none, pair(to, IO))) --> [turn], [to], noun_phrase(IO).
     verb_command(cmd(v_turn, DO, none))         --> [turn], noun_phrase(DO).
     verb_command(cmd(v_turn, DO, none))         --> [turn], [in], noun_phrase(DO).
-    verb_command(cmd(v_turn, DO, pair(to, IO))) --> [turn], [to], noun_phrase(IO).
     verb_command(cmd(v_turn_up, DO, none))      --> [turn], [up], noun_phrase(DO).
     verb_command(cmd(v_turn_down, DO, none))    --> [turn], [down], noun_phrase(DO).
 
@@ -386,6 +389,19 @@
     verb_command(cmd(v_thank, DO, none))     --> [thanks], noun_phrase(DO).
     verb_command(cmd(v_yn, none, none))      --> [yes].
     verb_command(cmd(v_climb_foo, DO, none)) --> [climb], noun_phrase(DO).
+
+    %% ---------------------------------------------------------------
+    %% NOUN PHRASE PARSING
+    %% ---------------------------------------------------------------
+
+    %% ---------------------------------------------------------------
+    %% NUMBER TOKEN (for page numbers, times, etc.)
+    %% ZIL: INTNUM token type, parsed into P-NUMBER global
+    %% ---------------------------------------------------------------
+
+    :- private(number_token//1).
+    :- uses(user, [atom_number/2]).
+    number_token(N) --> [Atom], { atom(Atom), atom_number(Atom, N), integer(N) }.
 
     %% ---------------------------------------------------------------
     %% NOUN PHRASE PARSING

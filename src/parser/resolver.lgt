@@ -38,6 +38,8 @@
 
     resolve_np(none, _, _, none) :- !.
 
+    resolve_np(intnum(N), _, _, intnum(N)) :- !.
+
     resolve_np(pronoun(Type), _, _, Entity) :-
         !,
         resolve_pronoun(Type, Entity).

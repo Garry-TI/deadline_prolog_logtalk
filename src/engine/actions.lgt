@@ -444,15 +444,10 @@
         writeln("A small piece of notepaper, covered in neat handwriting.").
     note_paper_action(_, _, _) :- true.
 
-    %% Desk calendar: shows today's date and appointments
+    %% Desk calendar: page-tracking and appointments
+    %% ZIL: DESK-CALENDAR-F (actions.zil lines 1401-1448)
     :- public(desk_calendar_action/3).
-    desk_calendar_action(v_read, desk_calendar, _IO) :-
-        !,
-        writeln("The calendar shows today's date: Thursday."),
-        writeln("Appointments:"),
-        writeln("  9:00 AM - Dr. Baxter (health consultation)"),
-        writeln("  11:30 AM - Attorney (re: will revision)").
-    desk_calendar_action(_, _, _) :- true.
+    desk_calendar_action(_, _, _) :- true.  % fallthrough
 
     %% Trash: examine reveals crumpled note
     :- public(trash_action/3).
@@ -743,13 +738,76 @@
         writeln("late!"),
         writeln("                              rsha").
 
-    %% DESK-CALENDAR-F
-    object_action(V, desk_calendar, _IO) :-
-        ( member(V, [v_read, v_examine]) ->
-            writeln("The calendar is open to today's date. Several appointments are noted."),
-            writeln("One says: \"Call Coates about the merger -- 10 AM.\"")
-        ; fail
+    %% DESK-CALENDAR-F handler (ZIL actions.zil lines 1401-1448)
+    :- private(desk_calendar_handler/2).
+
+    %% READ/EXAMINE with a page number: flip to that page first
+    desk_calendar_handler(V, pair(page, intnum(N))) :-
+        member(V, [v_read, v_examine]),
+        !,
+        ( (N =< 0 ; N > 30) ->
+            writeln("Why? Is it your birthday?")
+        ;
+            writeln("You flip the pages until you find the page."),
+            state::set_global(calendar_page, N),
+            calendar_show_page(N)
         ).
+
+    %% CLOSE calendar
+    desk_calendar_handler(v_close, _IO) :-
+        !,
+        writeln("It's not worth the effort.").
+
+    %% TURN calendar (no page number): flip to next page
+    desk_calendar_handler(v_turn, none) :-
+        !,
+        state::global_val(calendar_page, Page),
+        ( Page >= 31 ->
+            writeln("You have reached the end of the book.")
+        ;
+            NextPage is Page + 1,
+            state::set_global(calendar_page, NextPage),
+            calendar_show_page(NextPage)
+        ).
+
+    %% TURN calendar to <number>
+    desk_calendar_handler(v_turn, pair(to, intnum(N))) :-
+        !,
+        ( N > 30 ->
+            writeln("Thirty days hath September,"),
+            writeln("April, June, and November,"),
+            format("All the rest have ~w???~n", [N])
+        ; N =< 0 ->
+            writeln("Do you suppose that would be June 30?")
+        ;
+            state::set_global(calendar_page, N),
+            format("The calendar is now open to July ~w.~n", [N])
+        ).
+
+    %% READ/EXAMINE calendar (no page specified): show current page
+    desk_calendar_handler(V, _IO) :-
+        member(V, [v_read, v_examine]),
+        !,
+        state::global_val(calendar_page, Page),
+        calendar_show_page(Page).
+
+    %% calendar_show_page(+Page) - display the contents of a calendar page
+    :- private(calendar_show_page/1).
+    calendar_show_page(Page) :-
+        format("It is open to July ~w.~n", [Page]),
+        ( Page =:= 8 ->
+            writeln("There is only one notation here, in the 9AM spot:"),
+            writeln("\"Call Coates: Will completed\".")
+        ; Page =:= 7 ->
+            writeln("The only listing here is an appointment with Baxter at 2PM"),
+            writeln("at the Robner Corp. office.")
+        ;
+            writeln("Nothing of interest is scheduled on this date.")
+        ).
+
+    %% DESK-CALENDAR-F object_action dispatch
+    object_action(V, desk_calendar, IO) :-
+        desk_calendar_handler(V, IO).
 
     %% TRASH-BASKET-F
     object_action(V, trash_basket, _IO) :-
