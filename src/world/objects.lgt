@@ -661,6 +661,15 @@ information to allow even a guess about the intent of the letter.").
     initial_location(library).
 :- end_object.
 
+:- object(pencil, extends(entity), imports(takeable)).
+    :- info([comment is 'Pencil near the desk - used to shade note pad']).
+    synonym([pencil]).
+    desc("pencil").
+    fdesc("A pencil is lying on the floor near the desk.").
+    initial_flags([takebit]).
+    initial_location(library).
+:- end_object.
+
 :- object(library_door, extends(entity), imports(readable)).
     :- info([comment is 'The broken library door - evidence of locked-room mystery']).
     desc("oak door").

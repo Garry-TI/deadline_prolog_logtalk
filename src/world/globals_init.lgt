@@ -116,6 +116,7 @@
         state::assertz(location(library_button, library)),
         state::assertz(location(mud_spot, library)),
         state::assertz(location(bookshelves, library)),
+        state::assertz(location(pencil, library)),
         state::assertz(location(ebullion_bottle, library)),
         state::assertz(location(ebullion, ebullion_bottle)),
 

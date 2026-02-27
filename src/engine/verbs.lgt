@@ -196,9 +196,9 @@
             format("You don't see that here.~n", [])
         ;
             state::set_flag(DO, touchbit),
-            %% 1. Try object's LDESC
-            ( catch(DO::ldesc(D), _, fail) ->
-                writeln(D)
+            %% 1. Try object's TEXT property (ZIL P?TEXT)
+            ( catch(DO::text(T), _, fail) ->
+                writeln(T)
             %% 2. Person: use character description
             ; state::has_flag(DO, person) ->
                 person_examine(DO)

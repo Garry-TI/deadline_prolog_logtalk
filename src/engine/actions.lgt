@@ -619,4 +619,138 @@
     :- public(i_coates_arrive/0).
     i_coates_arrive :- npc_ai::i_coates_arrive.
 
+    %% ---------------------------------------------------------------
+    %% OBJECT ACTION HANDLERS
+    %% ZIL: P?ACTION routines for individual objects.
+    %% object_action(+Verb, +DO, +IO) succeeds if the object handles
+    %% the verb (intercepting the default verb handler).
+    %% ---------------------------------------------------------------
+
+    :- public(object_action/3).
+
+    %% CUP-F
+    object_action(V, cup, _IO) :-
+        ( member(V, [v_examine, v_look_inside]) ->
+            writeln("The cup is painted with a scene from Greek mythology and has a brown"),
+            writeln("discoloration at the bottom.")
+        ; V = v_smell ->
+            writeln("The cup smells faintly of tea.")
+        ; V = v_fingerprint ->
+            writeln("There don't seem to be any fingerprints on the cup.")
+        ; fail
+        ).
+
+    %% SAUCER-F
+    object_action(V, saucer, _IO) :-
+        ( member(V, [v_examine]) ->
+            writeln("The saucer is hand-painted with a mythological scene. It has a couple of"),
+            writeln("small areas of brown discoloration.")
+        ; V = v_smell ->
+            writeln("There is a faint smell of tea.")
+        ; fail
+        ).
+
+    %% LIBRARY-CARPET-F
+    object_action(V, library_carpet, _IO) :-
+        ( V = v_look_under ->
+            writeln("The carpeting is wall-to-wall so you can't look under it.")
+        ; V = v_examine ->
+            writeln("The carpet is an expensive affair, and quite clean, except for"),
+            writeln("a few small areas of dried mud in the vicinity of the desk."),
+            writeln("There are no other stains or markings that you can see."),
+            state::clear_flag(mud_spot, invisible)
+        ; fail
+        ).
+
+    %% BOOKSHELVES-F
+    object_action(V, bookshelves, _IO) :-
+        ( V = v_take ->
+            writeln("You have better things to do than taking books from the shelves.")
+        ; V = v_read ->
+            writeln("Reading, while educational, will not help you solve this case.")
+        ; member(V, [v_examine, v_search]) ->
+            writeln("The shelves contain many books and manuscripts covering a wide range of"),
+            writeln("subjects. They are meticulously arranged.")
+        ; fail
+        ).
+
+    %% LIBRARY-DESK-F
+    object_action(V, library_desk, _IO) :-
+        ( V = v_look_inside ->
+            writeln("There's nothing of interest in the desk.")
+        ; V = v_examine ->
+            writeln("It's a wide executive desk. A telephone sits on top."),
+            %% List items on the desk
+            ( state::location(note_paper, library_desk) ->
+                writeln("Lying atop the desk is a pad of white note paper.")
+            ; true
+            ),
+            ( state::location(desk_calendar, library_desk) ->
+                writeln("A desk calendar is open to today's date.")
+            ; true
+            )
+        ; fail
+        ).
+
+    %% NOTE-PAPER-F (pad)
+    object_action(V, note_paper, _IO) :-
+        ( member(V, [v_read, v_examine]) ->
+            writeln("There doesn't seem to be anything written on the pad.")
+        ; fail
+        ).
+
+    %% DESK-CALENDAR-F
+    object_action(V, desk_calendar, _IO) :-
+        ( member(V, [v_read, v_examine]) ->
+            writeln("The calendar is open to today's date. Several appointments are noted."),
+            writeln("One says: \"Call Coates about the merger -- 10 AM.\"")
+        ; fail
+        ).
+
+    %% TRASH-BASKET-F
+    object_action(V, trash_basket, _IO) :-
+        ( member(V, [v_examine, v_look_inside]) ->
+            writeln("The wastepaper basket contains some crumpled papers.")
+        ; fail
+        ).
+
+    %% TRASH-F (crumpled papers)
+    object_action(V, trash, _IO) :-
+        ( member(V, [v_take, v_read, v_examine]) ->
+            state::set_flag(trash, touchbit),
+            state::set_flag(trash_basket, touchbit),
+            fail  %% RFALSE in ZIL means don't handle, pass to verb
+        ; fail
+        ).
+
+    %% TRAY-F
+    object_action(V, tray, _IO) :-
+        ( V = v_examine ->
+            writeln("It's a large collapsible tray, the kind used for serving tea.")
+        ; fail
+        ).
+
+    %% PENCIL-F
+    object_action(V, pencil, _IO) :-
+        ( V = v_examine ->
+            writeln("It's an ordinary pencil.")
+        ; fail
+        ).
+
+    %% EBULLION-BOTTLE-F
+    object_action(V, ebullion_bottle, _IO) :-
+        ( member(V, [v_read, v_examine]) ->
+            writeln("The label reads: \"Ebullion: For temporary relief of upset stomach"),
+            writeln("and gastrointestinal distress. CAUTION: Do not exceed recommended"),
+            writeln("dosage. Keep away from children.\"")
+        ; fail
+        ).
+
+    %% TELEPHONE-F (basic examine)
+    object_action(V, telephone, _IO) :-
+        ( V = v_examine ->
+            writeln("It's a standard telephone.")
+        ; fail
+        ).
+
 :- end_object.

@@ -239,16 +239,14 @@
         %% succeeds or has no matching clause, continue to verb handler.
           ( pre_action_check(Verb, DO, IO) ->
 
-            %% 4. Indirect object handler (intercepts if succeeds)
-            ( ( IO \= none, io_obj(IO, IOObj),
-                catch(IOObj::action(IOHandler), _, fail),
-                call(IOHandler, Verb, DO, IO) ) -> true
+            %% 4. Indirect object action handler (intercepts if succeeds)
+            ( ( IO \= none,
+                catch(actions::object_action(Verb, IO, DO), _, fail) ) -> true
             ;
 
-            %% 5. Direct object handler (intercepts if succeeds)
+            %% 5. Direct object action handler (intercepts if succeeds)
               ( DO \= none,
-                catch(DO::action(DOHandler), _, fail),
-                call(DOHandler, Verb, DO, IO) ) -> true
+                catch(actions::object_action(Verb, DO, IO), _, fail) ) -> true
             ;
 
             %% 6. Generic verb handler

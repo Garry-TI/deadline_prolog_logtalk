@@ -224,8 +224,42 @@
 
     :- private(describe_object_in_room/1).
     describe_object_in_room(Obj) :-
-        get_entity_desc(Obj, D),
-        format("There is ~w here.~n", [D]).
+        %% Use fdesc (first description) if object hasn't been touched
+        ( \+ state::has_flag(Obj, touchbit),
+          catch(Obj::fdesc(FD), _, fail) ->
+            writeln(FD)
+        ;
+            get_entity_desc(Obj, D),
+            format("There is ~w here.~n", [D])
+        ),
+        %% If object is a surface/open container, list its visible contents
+        describe_surface_contents(Obj).
+
+    :- private(describe_surface_contents/1).
+    describe_surface_contents(Obj) :-
+        ( ( state::has_flag(Obj, surfacebit) ; state::has_flag(Obj, contbit) ),
+          state::has_flag(Obj, openbit) ->
+            findall(Child, (
+                state::location(Child, Obj),
+                \+ state::has_flag(Child, invisible),
+                \+ state::has_flag(Child, ndescbit)
+            ), Children),
+            describe_surface_children(Obj, Children)
+        ; true
+        ).
+
+    :- private(describe_surface_children/2).
+    describe_surface_children(_, []).
+    describe_surface_children(Surface, [Child|Rest]) :-
+        get_entity_desc(Surface, SD),
+        ( \+ state::has_flag(Child, touchbit),
+          catch(Child::fdesc(FD), _, fail) ->
+            writeln(FD)
+        ;
+            get_entity_desc(Child, CD),
+            format("Sitting on the ~w is ~w.~n", [SD, CD])
+        ),
+        describe_surface_children(Surface, Rest).
 
     :- private(get_entity_desc/2).
     get_entity_desc(Entity, Desc) :-
