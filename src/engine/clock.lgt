@@ -133,28 +133,33 @@
         ).
 
     %% fire_events/0 - fire all enabled events whose countdown has expired
+    %% Collects due events first, removes them, THEN fires them.
+    %% This allows event handlers to re-queue themselves (ZIL QUEUE -1 pattern).
     :- private(fire_events/0).
+    :- uses(user, [member/2]).
     fire_events :-
         state::global_val(present_time, T),
-        %% Check all enabled events
-        forall(
-            ( state::event(Routine, FireAt, _Type),
-              state::event_enabled(Routine),
-              T >= FireAt
-            ),
-            fire_one(Routine, T)
-        ).
+        %% Collect all due events
+        findall(Routine-Type, (
+            state::event(Routine, FireAt, Type),
+            state::event_enabled(Routine),
+            T >= FireAt
+        ), DueEvents),
+        %% Remove one-shot events from queue BEFORE firing
+        fire_collected(DueEvents).
 
-    :- private(fire_one/2).
-    fire_one(Routine, _T) :-
-        ( call(Routine) -> true ; true ),  % fire event; ignore failure
-        %% Remove one-shot events; leave demons for re-queue
-        ( state::event(Routine, _, demon) ->
-            true  % demons stay in queue
-        ;
+    :- private(fire_collected/1).
+    fire_collected([]).
+    fire_collected([Routine-Type|Rest]) :-
+        %% Remove one-shot events; leave demons
+        ( Type \= demon ->
             state::retractall(event(Routine, _, _)),
             state::retractall(event_enabled(Routine))
-        ).
+        ;   true
+        ),
+        %% Fire the handler (may re-queue itself)
+        ( call(Routine) -> true ; true ),
+        fire_collected(Rest).
 
     %% ---------------------------------------------------------------
     %% GAME START EVENTS

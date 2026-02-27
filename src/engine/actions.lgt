@@ -584,15 +584,157 @@
         state::move_entity(letter, foyer),
         clock::disable_event(actions::i_mail).
 
-    %% Phone call
+    %% ---------------------------------------------------------------
+    %% PHONE CALL EVENT — ZIL I-CALL (actions.zil lines 1993-2090)
+    %% Complex state machine: ring → Mrs. Robner answers → moves to
+    %% bedroom for private call → player can eavesdrop.
+    %% States: call_ring, call_in_progress, call_waiting, call_move
+    %% ---------------------------------------------------------------
     :- public(i_call/0).
     i_call :-
         state::current_room(Here),
-        ( Here = foyer ; Here = living_room ; Here = nfoyer ->
-            writeln("The telephone rings.")
-        ;   true
+        state::global_val(call_ring, CallRing),
+        state::global_val(call_in_progress, CIP),
+        state::global_val(call_waiting, CW),
+        state::global_val(call_move, CM),
+        ( CallRing = true ->
+            %% Phone is ringing — check if Mrs. Robner reached living room
+            ( state::location(mrs_robner, living_room) ->
+                %% She answers the phone
+                state::set_global(call_ring, false),
+                ( Here = living_room ->
+                    writeln("Mrs. Robner picks up the phone. \"Oh, hi. Look, I can't talk now. I'll call"),
+                    writeln("you later, okay? Bye, then.\" She hangs up the phone.")
+                ; true
+                ),
+                robner_call_move
+            ;
+                %% Still ringing — tell player if nearby
+                ( phone_in_room(Here) ->
+                    writeln("The phone rings again."),
+                    resolver::update_pronoun_it(telephone)
+                ; true
+                ),
+                clock::queue_and_enable(events::i_call, 1)
+            )
+        ; CIP > 0 ->
+            %% Call in progress — Mrs. Robner talking in bedroom
+            NewCIP is CIP + 1,
+            ( NewCIP > 15 ->
+                %% Call ends naturally after 15 ticks
+                state::set_global(call_in_progress, 0),
+                clock::disable_event(events::i_call)
+            ;
+                state::set_global(call_in_progress, NewCIP),
+                ( state::has_flag(master_bedroom_door, openbit) ->
+                    %% Door open — she speaks quietly and hangs up
+                    ( Here = master_bedroom ; Here = corridor_1 ->
+                        writeln("Mrs. Robner speaks quietly into the phone and hangs up.")
+                    ; true
+                    ),
+                    state::set_global(call_in_progress, 0),
+                    clock::disable_event(events::i_call)
+                ; Here = master_bedroom ->
+                    writeln("Mrs. Robner speaks quietly into the phone and hangs up."),
+                    state::set_global(call_in_progress, 0),
+                    clock::disable_event(events::i_call)
+                ;
+                    clock::queue_and_enable(events::i_call, 1)
+                )
+            )
+        ; CW > 0 ->
+            %% Mrs. Robner wants privacy — player is in her room
+            ( Here = master_bedroom ; Here = master_bath ; Here = bedroom_balcony ->
+                NewCW is CW + 1,
+                state::set_global(call_waiting, NewCW),
+                ( NewCW =< 3 ->
+                    writeln("Mrs. Robner glares at you, holding the phone in one hand. \"Would you"),
+                    writeln("mind terribly?\", she asks."),
+                    clock::queue_and_enable(events::i_call, 1)
+                ; CM = true ->
+                    writeln("\"I can't understand why you won't let me use the phone. Can't I talk to"),
+                    writeln("my best friend? Hummph...I suppose it can wait, since you are being"),
+                    writeln("so...uh...unhelpful.\" She puts down the receiver, rises from her bed, and"),
+                    writeln("starts to leave."),
+                    state::set_global(call_move, false),
+                    state::set_global(call_waiting, 0),
+                    clock::disable_event(events::i_call)
+                ;
+                    writeln("\"I give up. What IS your problem, anyway?,\" Mrs. Robner asks, in a"),
+                    writeln("barely controllable rage. \"I'll call you back,\" she says, and slams down"),
+                    writeln("the receiver."),
+                    state::set_global(call_move, false),
+                    state::set_global(call_waiting, 0),
+                    clock::disable_event(events::i_call)
+                )
+            ;
+                %% Player left — she can make the call
+                establish_call,
+                clock::queue_and_enable(events::i_call, 1)
+            )
+        ; CM = true ->
+            %% Mrs. Robner is moving to master bedroom to make private call
+            ( state::location(mrs_robner, master_bedroom) ->
+                ( Here = bedroom_balcony ; Here = master_bath ; Here = master_bedroom ->
+                    ( Here \= master_bedroom ->
+                        writeln("Mrs. Robner enters her bedroom and spots you.")
+                    ; true
+                    ),
+                    writeln("\"I'd like to make a private phone call, if you have no objection,\" she"),
+                    writeln("says. She motions toward the door."),
+                    state::set_global(call_waiting, 1),
+                    clock::queue_and_enable(events::i_call, 1)
+                ;
+                    establish_call,
+                    clock::queue_and_enable(events::i_call, 1)
+                )
+            ;
+                %% She hasn't arrived yet — keep waiting
+                clock::queue_and_enable(events::i_call, 1)
+            )
+        ;
+            %% Initial trigger — phone starts ringing
+            ( phone_in_room(Here) ->
+                writeln("The telephone rings."),
+                resolver::update_pronoun_it(telephone)
+            ; Here = living_room ; Here = foyer ; Here = nfoyer ->
+                writeln("You hear a telephone ringing in a nearby room.")
+            ;
+                writeln("You hear a phone ringing in a nearby room.")
+            ),
+            npc_ai::establish_goal(mrs_robner, living_room),
+            state::set_global(call_ring, true),
+            clock::queue_and_enable(events::i_call, 1)
+        ).
+
+    %% Helper: rooms with a telephone (local_globals)
+    :- private(phone_in_room/1).
+    phone_in_room(library).
+    phone_in_room(living_room).
+    phone_in_room(master_bedroom).
+
+    %% ESTABLISH-CALL: Mrs. Robner starts her private call
+    :- private(establish_call/0).
+    establish_call :-
+        state::set_global(call_move, false),
+        state::set_global(call_in_progress, 1),
+        %% Close bedroom door for privacy
+        state::clear_flag(master_bedroom_door, openbit),
+        ( state::current_room(corridor_1) ->
+            writeln("Mrs. Robner shuts the door to the master bedroom.")
+        ; true
+        ).
+
+    %% ROBNER-CALL-MOVE: Mrs. Robner moves to bedroom for private call
+    :- private(robner_call_move/0).
+    robner_call_move :-
+        ( state::location(mrs_robner, Loc) ->
+            state::set_global(robner_old_loc, Loc)
+        ; true
         ),
-        clock::disable_event(actions::i_call).
+        npc_ai::establish_goal(mrs_robner, master_bedroom),
+        state::set_global(call_move, true),
+        clock::queue_and_enable(events::i_call, 1).
 
     %% Gardener calms down (GARDENER-NO-REPLY cleared)
     :- public(i_gardener_calm/0).
@@ -853,12 +995,47 @@
         ; fail
         ).
 
-    %% TELEPHONE-F
+    %% TELEPHONE-F (ZIL actions.zil lines 2195-2231)
     object_action(V, telephone, _IO) :-
-        ( V = v_examine ->
+        state::current_room(Here),
+        ( \+ phone_in_room(Here) ->
+            writeln("There's no telephone here.")
+        ; V = v_examine ->
             writeln("It's a standard telephone.")
-        ; V = v_take ->
-            writeln("You can't take the telephone.")
+        ; V = v_find ->
+            writeln("You are the detective, after all.")
+        ; member(V, [v_take, v_listen, v_reply]) ->
+            state::global_val(call_ring, CR),
+            state::global_val(call_in_progress, CIP),
+            ( CR = true ->
+                %% Phone is ringing — player picks up
+                writeln("You take the phone and hear an unfamiliar man's voice"),
+                writeln("say \"Hello? Is Leslie there?\" You start to reply, but Mrs. Robner"),
+                ( Here = living_room ->
+                    writeln("enters and takes the phone from you. \"Thank you, inspector,\" she says, and"),
+                    writeln("then into the telephone: \"Hello? Oh, hi. I can't really talk now. I'll call"),
+                    writeln("you back soon, OK? Bye.\" She hangs up and starts toward the door.")
+                ;
+                    writeln("picks up the phone from another extension and hears you. \"I've got it,"),
+                    writeln("inspector,\" she says. \"Hello? Oh, it's you. I can't talk now. I'll call"),
+                    writeln("you back soon. Bye!\" You hear two clicks and the line goes dead.")
+                ),
+                state::set_global(call_ring, false),
+                state::move_entity(mrs_robner, living_room),
+                robner_call_move
+            ; CIP > 0 ->
+                %% Call in progress — player eavesdrops
+                writeln("You can hear Mrs. Robner and a man whose voice you don't recognize."),
+                writeln("Robner: \"...much too early to consider it.\""),
+                writeln("Man's Voice: \"But we couldn't have planned it better. You're free.\""),
+                writeln("Robner: \"Yes, but it will...Wait a second...I think...\""),
+                writeln("\"Click.\" You realize that the call has been disconnected."),
+                state::set_global(call_overheard, true),
+                state::set_global(call_in_progress, 0),
+                clock::disable_event(events::i_call)
+            ;
+                writeln("All you hear is a dial tone.")
+            )
         ; fail
         ).
 

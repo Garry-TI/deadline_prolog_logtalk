@@ -66,6 +66,13 @@
         state::assertz(global_val(calendar_page, 7)),
         %% George calendar flag (ZIL: G-CALENDAR)
         state::assertz(global_val(g_calendar, false)),
+        %% Phone call state machine (ZIL: actions.zil lines 1984-2187)
+        state::assertz(global_val(call_ring, false)),
+        state::assertz(global_val(call_in_progress, 0)),
+        state::assertz(global_val(call_waiting, 0)),
+        state::assertz(global_val(call_move, false)),
+        state::assertz(global_val(call_overheard, false)),
+        state::assertz(global_val(robner_old_loc, none)),
         %% Last action tracking (L-PRSA, L-PRSO, L-PRSI)
         state::assertz(global_val(last_verb, none)),
         state::assertz(global_val(last_do, none)),
