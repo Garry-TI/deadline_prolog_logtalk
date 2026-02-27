@@ -1136,4 +1136,133 @@
         ; fail
         ).
 
+    %% ---------------------------------------------------------------
+    %% BALCONY & RAILING HANDLERS
+    %% ZIL: L-RAILING-F, B-RAILING-F, L-BALCONY-F, B-BALCONY-F
+    %% ---------------------------------------------------------------
+
+    %% L-RAILING-F — library balcony railing (key evidence: paint scrapes)
+    object_action(V, l_railing, _IO) :-
+        ( V = v_examine ->
+            writeln("The railing is made of a sturdy metal and helps prevent nasty falls. There is"),
+            writeln("a small area of paint scraped off the outside edge.")
+        ; fail
+        ).
+
+    %% B-RAILING-F — bedroom balcony railing
+    object_action(V, b_railing, _IO) :-
+        ( V = v_examine ->
+            writeln("This sturdy railing protects people on the balcony from being impaled upon"),
+            writeln("the exotic plants below. The railing itself is uniformly painted.")
+        ; fail
+        ).
+
+    %% L-BALCONY-F — library balcony surface (evidence: dried mud)
+    object_action(V, l_balcony, _IO) :-
+        ( V = v_examine ->
+            writeln("The balcony itself is made of wood, except the railing which is metal. The"),
+            writeln("balcony is in good repair, but a few spots of dried mud soil the floor.")
+        ; fail
+        ).
+
+    %% B-BALCONY-F — bedroom balcony surface
+    object_action(V, b_balcony, _IO) :-
+        ( V = v_examine ->
+            writeln("The balcony is wooden, excepting the metal railing surrounding it."),
+            writeln("It is in good repair and is quite clean.")
+        ; fail
+        ).
+
+    %% ---------------------------------------------------------------
+    %% FURNITURE & DISPLAY HANDLERS
+    %% ZIL: MASTER-BEDROOM-DRESSER-F, LR-CABINETS-F, S-SHELVES-F
+    %% ---------------------------------------------------------------
+
+    %% MASTER-BEDROOM-DRESSER-F
+    object_action(V, master_bedroom_dresser, _IO) :-
+        ( V = v_examine ->
+            writeln("The dresser is a beautiful piece of cabinetry.")
+        ; fail
+        ).
+
+    %% LR-CABINETS-F — living room cabinets
+    object_action(V, lr_cabinets, _IO) :-
+        ( V = v_examine ->
+            writeln("The cabinets are beautifully handworked walnut and mahogany.")
+        ; fail
+        ).
+
+    %% S-SHELVES-F — shed shelves
+    object_action(V, s_shelves, _IO) :-
+        ( V = v_examine ->
+            writeln("The shelves contain various garden tools.")
+        ; fail
+        ).
+
+    %% SILVERWARE-F
+    object_action(V, silverware, _IO) :-
+        ( V = v_examine ->
+            writeln("The silver is of the finest quality and design.")
+        ; V = v_take ->
+            writeln("The silverware is not yours to take.")
+        ; fail
+        ).
+
+    %% ---------------------------------------------------------------
+    %% CHINA SET HANDLERS (kitchen/dining)
+    %% ZIL: CSCP handler shared by CUPS-F, SAUCERS-F, PLATES-F, CHINA-F
+    %% ---------------------------------------------------------------
+
+    object_action(V, cups, _IO) :-
+        ( V = v_examine ->
+            writeln("Each one is hand-painted and depicts a scene from Greek mythology.")
+        ; V = v_take ->
+            writeln("Mrs. Robner would not appreciate your taking her valuable china.")
+        ; fail
+        ).
+
+    object_action(V, saucers, _IO) :-
+        ( V = v_examine ->
+            writeln("Each one is hand-painted and depicts a scene from Greek mythology.")
+        ; V = v_take ->
+            writeln("Mrs. Robner would not appreciate your taking her valuable china.")
+        ; fail
+        ).
+
+    object_action(V, plates, _IO) :-
+        ( V = v_examine ->
+            writeln("Each one is hand-painted and depicts a scene from Greek mythology.")
+        ; V = v_take ->
+            writeln("Mrs. Robner would not appreciate your taking her valuable china.")
+        ; fail
+        ).
+
+    object_action(V, china, _IO) :-
+        ( V = v_examine ->
+            writeln("Each one is hand-painted and depicts a scene from Greek mythology.")
+        ; V = v_take ->
+            writeln("Mrs. Robner would not appreciate your taking her valuable china.")
+        ; fail
+        ).
+
+    %% ---------------------------------------------------------------
+    %% CRIME SCENE EVIDENCE
+    %% ZIL: CORPSE-F, PISTOL-F
+    %% ---------------------------------------------------------------
+
+    %% CORPSE-F (Dunbar's body — late game evidence)
+    object_action(V, corpse, _IO) :-
+        ( V = v_examine ->
+            writeln("The corpse is most gruesome. Ms. Dunbar was apparently shot in the"),
+            writeln("head at close range, leaving a most distasteful mess.")
+        ; fail
+        ).
+
+    %% PISTOL-F
+    object_action(V, pistol, _IO) :-
+        ( V = v_examine ->
+            writeln("The pistol has bloodstains on it. It has recently been fired.")
+        ; fail
+        ).
+
 :- end_object.
