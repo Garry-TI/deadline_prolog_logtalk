@@ -27,6 +27,7 @@
         init_global_vars,
         init_npc_locations,
         init_object_locations,
+        init_global_object_locations,
         init_entity_initial_flags,
         init_object_flags,
         init_room_flags,
@@ -73,6 +74,10 @@
         state::assertz(global_val(call_move, false)),
         state::assertz(global_val(call_overheard, false)),
         state::assertz(global_val(robner_old_loc, none)),
+        %% Fingerprint/analysis system (ZIL: FINGERPRINT-OBJ, ANALYSIS-OBJ, ANALYSIS-GOAL)
+        state::assertz(global_val(fingerprint_obj, none)),
+        state::assertz(global_val(analysis_obj, none)),
+        state::assertz(global_val(analysis_goal, none)),
         %% Last action tracking (L-PRSA, L-PRSO, L-PRSI)
         state::assertz(global_val(last_verb, none)),
         state::assertz(global_val(last_do, none)),
@@ -242,6 +247,21 @@
 
         %% East of door (exterior)
         state::assertz(location(cornerstone, east_of_door)).
+
+    %% ---------------------------------------------------------------
+    %% GLOBAL OBJECTS (ZIL: IN GLOBAL-OBJECTS — accessible everywhere)
+    %% Iterates over entities with initial_location(global_objects) and
+    %% asserts location facts for the global_objects pseudo-container.
+    %% ---------------------------------------------------------------
+
+    :- private(init_global_object_locations/0).
+    init_global_object_locations :-
+        forall(
+            ( extends_object(Obj, entity),
+              catch(Obj::initial_location(global_objects), _, fail)
+            ),
+            state::assertz(location(Obj, global_objects))
+        ).
 
     %% ---------------------------------------------------------------
     %% ENTITY INITIAL FLAGS (from object initial_flags/1 predicates)

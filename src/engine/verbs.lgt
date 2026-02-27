@@ -515,9 +515,40 @@
     :- public(v_wait/0).
     v_wait :- writeln("Time passes.").
 
+    %% V-WAIT-FOR: ZIL verbs.zil lines 716-736
     :- public(v_wait_for/1).
     v_wait_for(none) :- writeln("Wait for what?").
-    v_wait_for(_DO) :- writeln("Time passes.").
+    v_wait_for(DO) :-
+        ( DO = global_duffy ->
+            ( state::global_val(fingerprint_obj, Obj), Obj \= none ->
+                %% Duffy is at the lab — advance time until he returns
+                writeln("Time passes..."),
+                wait_ticks(30)
+            ;
+                writeln("You would wait quite a while, since Sergeant Duffy is always"),
+                writeln("nearby, but never approaches you unless requested.")
+            )
+        ; state::has_flag(DO, person) ->
+            %% Wait for an NPC to arrive
+            state::current_room(Room),
+            ( state::location(DO, Room) ->
+                ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
+                format("~w is already here!~n", [D])
+            ;
+                writeln("Time passes..."),
+                wait_ticks(30)
+            )
+        ;
+            writeln("Not a good idea. You might wait all day.")
+        ).
+
+    :- private(wait_ticks/1).
+    wait_ticks(0) :- !.
+    wait_ticks(N) :-
+        N > 0,
+        clock::clocker,
+        N1 is N - 1,
+        wait_ticks(N1).
 
     %% ---------------------------------------------------------------
     %% SEARCH
@@ -537,7 +568,10 @@
     :- public(v_find/1).
     v_find(none) :- writeln("Find what?").
     v_find(DO) :-
-        ( state::location(DO, Loc) ->
+        %% Check for object-specific action handler first (e.g. Duffy)
+        ( catch(actions::object_action(v_find, DO, none), _, fail) ->
+            true
+        ; state::location(DO, Loc) ->
             ( Loc = player ->
                 ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
                 format("You are carrying the ~w.~n", [D])
@@ -552,18 +586,36 @@
     %% ANALYSE / FINGERPRINT
     %% ---------------------------------------------------------------
 
+    %% V-ANALYZE: ZIL verbs.zil lines 1543-1560
+    %% If IO is fingerprints, redirect to fingerprint verb.
+    %% If object is takeable, call DO-ANALYZE (analysis mode).
+    %% Otherwise Duffy can't analyze it.
     :- public(v_analyze/1).
     v_analyze(none) :- writeln("Analyze what?").
     v_analyze(DO) :-
-        ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
-        format("You study the ~w carefully but find nothing extraordinary.~n", [D]).
+        ( DO = global_fingerprints ->
+            %% "analyze fingerprints" → need to specify what
+            writeln("You must specify what to analyze.")
+        ; state::global_val(fingerprint_obj, Cur), Cur \= none ->
+            writeln("Duffy is already occupied with another errand.")
+        ; state::has_flag(DO, takebit) ->
+            %% Takeable object → Duffy takes it to the lab (analysis mode)
+            actions::do_fingerprint(DO, true)
+        ; state::location(DO, global_objects) ->
+            ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
+            format("Duffy appears in an instant. \"Well, I might be able to analyze the ~w,~n", [D]),
+            writeln("but you don't even have it with you!\"  With that, he discreetly leaves.")
+        ;
+            writeln("Sergeant Duffy appears with a puzzled look on his face. \"With all"),
+            writeln("respect, I don't think I can take THAT to the laboratory! I'll"),
+            writeln("be nearby if you need me.\" He leaves, shaking his head slowly.")
+        ).
 
+    %% V-FINGERPRINT: ZIL redirects to DO-FINGERPRINT
     :- public(v_fingerprint/1).
     v_fingerprint(none) :- writeln("Fingerprint what?").
     v_fingerprint(DO) :-
-        ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
-        format("You look for fingerprints on the ~w.~n", [D]),
-        writeln("You find nothing conclusive.").
+        actions::do_fingerprint(DO, false).
 
     %% ---------------------------------------------------------------
     %% ACCUSE / ARREST / CONFRONT
@@ -583,11 +635,21 @@
         writeln("\""),
         writeln("This requires more proof before making a formal accusation.").
 
+    %% V-ARREST: ZIL verbs.zil lines 1574-1586
     :- public(v_arrest/1).
     v_arrest(none) :- writeln("Arrest whom?").
     v_arrest(Person) :-
         ( catch(Person::desc(D), _, D = Person) -> true ; D = Person ),
-        format("You attempt to arrest ~w. Without sufficient evidence, this won't stick.~n", [D]).
+        ( state::has_flag(Person, person) ->
+            format("You realize that you don't have enough evidence to convict ~w so~n", [D]),
+            writeln("you resolve to continue the investigation.")
+        ; Person = global_duffy ->
+            format("Oh, come on now!  Not trusty ~w!~n", [D])
+        ;
+            format("Sergeant Duffy enters, strokes his chin, and in a rather puzzled voice~n", []),
+            format("says \"Excuse me, sir, but it would cause quite a stir at the station~n", []),
+            format("to be charging a ~w with murder!\"  He leaves quietly.~n", [D])
+        ).
 
     :- public(v_confront/2).
     v_confront(none, _) :- writeln("Confront whom?").

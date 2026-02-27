@@ -163,6 +163,11 @@
         ;
             %% Global objects accessible from this room
             room_global_object(Room, Entity)
+        ;
+            %% Objects in GLOBAL-OBJECTS pseudo-container (always accessible)
+            %% ZIL: (IN GLOBAL-OBJECTS) — Duffy, fingerprints, topics, etc.
+            state::location(Entity, global_objects),
+            \+ state::has_flag(Entity, invisible)
         ).
 
     :- private(room_global_object/2).

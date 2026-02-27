@@ -1048,13 +1048,17 @@
         ; fail
         ).
 
-    %% FRAGMENT-F (pottery fragment — key evidence)
+    %% FRAGMENT-F (pottery fragment -- key evidence)
+    %% ZIL: actions.zil lines 617-627
     object_action(V, fragment, _IO) :-
         ( V = v_examine ->
-            writeln("It's a small fragment of what looks like fine china. It has a trace"),
-            writeln("of brown discoloration.")
+            writeln("The piece of porcelain is filthy, coated with dried mud. You can barely"),
+            writeln("make out some design underneath the dirt.")
         ; V = v_smell ->
             writeln("It smells faintly of tea.")
+        ; V = v_fingerprint ->
+            writeln("It's covered with dirt and mud. You realize that there would be no good"),
+            writeln("fingerprints on this.")
         ; fail
         ).
 
@@ -1500,6 +1504,216 @@
         ( V = v_examine ->
             writeln("The pistol has bloodstains on it. It has recently been fired.")
         ; fail
+        ).
+
+    %% ---------------------------------------------------------------
+    %% GLOBAL-DUFFY-F
+    %% ZIL: actions.zil lines 3792-3799
+    %% Duffy is a global object — always accessible, responds to FIND.
+    %% ---------------------------------------------------------------
+
+    object_action(v_find, global_duffy, _IO) :- !,
+        writeln("Like a lurking grue in the dark places of the earth, Sergeant Duffy is always"),
+        writeln("near the scene of a crime. If you want something analyzed, he will arrive in"),
+        writeln("an instant to take the evidence to the lab. When the results are available,"),
+        writeln("he rushes them back to you. If you wish to arrest someone, Duffy will be there"),
+        writeln("with the handcuffs. A more dedicated civil servant cannot be found.").
+
+    %% ---------------------------------------------------------------
+    %% GLOBAL-FINGERPRINTS-F
+    %% ZIL: actions.zil lines 4515-4522
+    %% "take fingerprints from X" → redirects to fingerprint verb
+    %% ---------------------------------------------------------------
+
+    object_action(v_take, global_fingerprints, IO) :- !,
+        ( IO = none ->
+            writeln("You must specify what to take the fingerprints from.")
+        ;   %% Redirect to fingerprint verb on the indirect object
+            ( IO = pair(from, Obj) -> Target = Obj ; Target = IO ),
+            game_loop::perform(v_fingerprint, Target, none)
+        ).
+
+    %% ---------------------------------------------------------------
+    %% SERGEANT DUFFY: FINGERPRINT ANALYSIS SYSTEM
+    %% ZIL: DO-FINGERPRINT (actions.zil 2690-2721)
+    %%       I-FINGERPRINT  (actions.zil 2727-2799)
+    %%       DO-ANALYZE     (actions.zil 2725)
+    %%
+    %% When the player fingerprints or analyzes a takeable object,
+    %% Duffy takes it to the lab and returns after 15-30 ticks with
+    %% results. Only one analysis at a time.
+    %% ---------------------------------------------------------------
+
+    :- public(do_fingerprint/2).
+    :- uses(user, [random_between/3]).
+    do_fingerprint(Obj, IsAnalysis) :-
+        %% Already busy?
+        ( state::global_val(fingerprint_obj, Cur), Cur \= none ->
+            writeln("Sergeant Duffy is already at the lab running a previous errand."),
+            writeln("You will have to wait for him to return.")
+        ;
+            %% Announce (fingerprint shows inspection message, analyze doesn't)
+            ( IsAnalysis = false ->
+                ( catch(Obj::desc(D), _, D = Obj) -> true ; D = Obj ),
+                format("You look at the ~w closely. It appears to have good~n", [D]),
+                writeln("fingerprints on it, so you call for Sergeant Duffy.")
+            ;   true
+            ),
+            %% Set analysis globals
+            state::set_global(fingerprint_obj, Obj),
+            ( IsAnalysis = true ->
+                state::set_global(analysis_obj, true)
+            ;   state::set_global(analysis_obj, false)
+            ),
+            %% Ladder special case: lab closes at noon
+            ( Obj = ladder ->
+                state::global_val(present_time, T),
+                ( T > 720 ->
+                    writeln("Sergeant Duffy arrives and shakes his head sadly. \"I'm sorry, sir, but"),
+                    writeln("the Ladder Analysis Department closes at noon.\" He leaves."),
+                    state::set_global(fingerprint_obj, none)
+                ;
+                    state::set_global(ladder_flag, false),
+                    state::set_global(ladder_flag_2, false),
+                    state::clear_flag(ladder, ndescbit),
+                    schedule_fingerprint_return(Obj)
+                )
+            ;
+                schedule_fingerprint_return(Obj)
+            )
+        ).
+
+    :- private(schedule_fingerprint_return/1).
+    schedule_fingerprint_return(Obj) :-
+        %% Queue Duffy's return in 15 + random(1-15) ticks
+        random_between(1, 15, Rnd),
+        Delay is 15 + Rnd,
+        clock::queue_and_enable(actions::i_fingerprint, Delay),
+        %% Remove object from player's inventory
+        state::retractall(location(Obj, _)),
+        state::set_flag(Obj, touchbit),
+        ( catch(Obj::desc(D), _, D = Obj) -> true ; D = Obj ),
+        format("Sergeant Duffy walks up as quietly as a mouse. He takes the ~w from~n", [D]),
+        writeln("you. \"I'll return soon with the results,\" he says, and leaves as silently as"),
+        writeln("he entered.").
+
+    %% ---------------------------------------------------------------
+    %% I-FINGERPRINT: Duffy returns with lab results
+    %% ZIL: actions.zil lines 2727-2799
+    %% ---------------------------------------------------------------
+
+    :- public(i_fingerprint/0).
+    :- uses(user, [random_between/3]).
+    i_fingerprint :-
+        state::global_val(fingerprint_obj, Obj),
+        ( Obj = none -> true   % safety check
+        ;
+            %% Duffy's arrival narration (probabilistic)
+            nl,
+            write("Sergeant Duffy "),
+            ( Obj = ladder ->
+                write("comes onto the scene. ")
+            ;
+                random_between(1, 100, R),
+                ( catch(Obj::desc(D), _, D = Obj) -> true ; D = Obj ),
+                ( R =< 30 ->
+                    format("appears before you, holding the ~w ", [D]),
+                    write("carefully in his hands. His quiet efficiency and youthful vigor impress you"),
+                    nl, write("quite a bit. ")
+                ; R =< 65 ->
+                    format("seems to arrive from nowhere, holding the ~w ", [D]),
+                    write("in his hands. ")
+                ;
+                    format("returns with the ~w. For a moment you muse on his almost", [D]),
+                    nl, write("magical entrances. ")
+                )
+            ),
+            %% Report results; early_return means LoBlo case handled everything
+            fingerprint_results(Obj, Result),
+            ( Result = early_return ->
+                true
+            ;
+                %% Standard closing: return object to player
+                ( Obj = ladder ->
+                    %% Check if player is outside
+                    state::current_room(Room),
+                    ( catch(Room::line(outside_line), _, fail) ->
+                        writeln(" In the interests of"),
+                        writeln("civility, I have left the ladder outside the house.\" He leaves."),
+                        state::assertz(location(ladder, front_path))
+                    ;
+                        ( catch(Obj::desc(D3), _, D3 = Obj) -> true ; D3 = Obj ),
+                        writeln("\"."),
+                        format("With that, he leaves, handing you the ~w as he whisks away.~n", [D3]),
+                        state::assertz(location(Obj, player))
+                    )
+                ;
+                    ( catch(Obj::desc(D3), _, D3 = Obj) -> true ; D3 = Obj ),
+                    writeln("\"."),
+                    format("With that, he leaves, handing you the ~w as he whisks away.~n", [D3]),
+                    state::assertz(location(Obj, player))
+                ),
+                state::set_global(fingerprint_obj, none)
+            )
+        ).
+
+    %% fingerprint_results(+Obj, -Result)
+    %% Result = early_return if the LoBlo case handles its own cleanup,
+    %% Result = continue for all other cases.
+    :- private(fingerprint_results/2).
+    fingerprint_results(Obj, Result) :-
+        state::global_val(analysis_obj, IsAnalysis),
+        ( IsAnalysis = false ->
+            %% Pure fingerprint analysis
+            write("\"The fingerprints,\" he begins, \"belong to "),
+            ( Obj = cup ->
+                write("Mr. Robner")
+            ; ( Obj = saucer ; Obj = sugar_bowl ) ->
+                write("Mr. Robner and Ms. Dunbar")
+            ;
+                write("no one in particular")
+            ),
+            Result = continue
+        ; state::global_val(analysis_goal, Goal), Goal \= none ->
+            %% Analysis with a specific goal (analyze fragment for loblo)
+            ( Obj = fragment, ( Goal = loblo ; Goal = loblo_bottle ; Goal = global_loblo ) ->
+                writeln("\"The fragment did contain LoBlo. Here is the full report.\""),
+                writeln("He hands you a slip of paper, and departs."),
+                state::assertz(location(lab_report, player)),
+                state::set_flag(lab_report, touchbit),
+                state::assertz(location(Obj, player)),
+                state::set_global(fingerprint_obj, none),
+                Result = early_return
+            ;
+                ( catch(Obj::desc(DD), _, DD = Obj) -> true ; DD = Obj ),
+                format("\"The ~w analysis yielded nothing useful", [DD]),
+                Result = continue
+            )
+        ;
+            %% Analysis without specific goal
+            ( Obj = fragment ->
+                write("\"The fragment,\" he begins, \"contains traces of tea and sugar."),
+                write(" In addition, there seems to be some other chemical"),
+                nl,
+                write("present that is not a common medication. It could take weeks to determine"),
+                nl,
+                write("exactly what it is. It is definitely not Amitraxin (Ebullion), though. There"),
+                nl,
+                write("are no clear fingerprints")
+            ; Obj = cup ->
+                write("\"The cup,\" he begins, \"contains a trace of tea. The fingerprints are those of Mr. Robner")
+            ; Obj = saucer ->
+                write("\"The saucer,\" he begins, \"contains traces of tea and sugar. The fingerprints are"),
+                nl,
+                write("those of Mr. Robner and Ms. Dunbar")
+            ; Obj = sugar_bowl ->
+                write("\"The bowl,\" he begins, \"has the fingerprints of Mr. Robner and Ms. Dunbar. The bowl"),
+                nl,
+                write("contains common table sugar only.")
+            ;
+                write("\"I am sorry,\" he begins, \"but the lab found nothing of interest.")
+            ),
+            Result = continue
         ).
 
 :- end_object.
