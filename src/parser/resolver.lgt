@@ -50,7 +50,8 @@
         !,
         find_candidates(Words, Candidates),
         ( Candidates = [] ->
-            format("I don't see any '~w' here.~n", [Words]),
+            words_to_phrase(Words, Phrase),
+            format("You don't see any ~w here.~n", [Phrase]),
             fail
         ; Candidates = [Entity] ->
             true
@@ -113,13 +114,23 @@
         findall(Entity, (
             candidate_object(Entity),
             object_matches(Entity, Words)
-        ), All),
+        ), AllRaw),
+        sort(AllRaw, All),  %% deduplicate
         %% Prefer visible, accessible objects
         filter_accessible(All, Accessible),
         ( Accessible \= [] ->
             Candidates = Accessible
         ;   Candidates = All
         ).
+
+    :- private(words_to_phrase/2).
+    words_to_phrase([], '').
+    words_to_phrase([W], W).
+    words_to_phrase([W|Ws], Phrase) :-
+        Ws \= [],
+        words_to_phrase(Ws, Rest),
+        atom_concat(W, ' ', W1),
+        atom_concat(W1, Rest, Phrase).
 
     :- private(filter_accessible/2).
     filter_accessible([], []).
@@ -196,7 +207,8 @@
     :- private(has_matching_noun/2).
     has_matching_noun(Entity, Words) :-
         member(Word, Words),
-        matches_noun(Entity, Word).
+        matches_noun(Entity, Word),
+        !.
 
     %% matches_noun/2 - check if Word is a valid noun for Entity
     :- private(matches_noun/2).
@@ -271,7 +283,6 @@
         writeln("Which do you mean:"),
         print_candidate_list(Candidates),
         write("? "),
-        read_term_from_atom('', _, []),  % flush
         read_line_to_string(user_input, Line),
         lexer::tokenize(Line, Tokens),
         ( Tokens = [] ->
@@ -282,7 +293,7 @@
             ( Matches = [Entity] -> true
             ; Matches = [] ->
                 writeln("I don't see that here."), fail
-            ;   Entity = Matches  % still ambiguous - pick first
+            ;   Matches = [Entity|_]  % still ambiguous - pick first
             )
         ).
 

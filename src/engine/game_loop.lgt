@@ -222,37 +222,69 @@
         state::current_actor(Actor),
         state::current_room(Room),
 
-        %% 1. Actor/winner action handler
+        %% 1. Actor/winner action handler (intercepts if succeeds)
         ( Actor \= player,
           catch(Actor::action(ActorHandler), _, fail),
           call(ActorHandler, Verb, DO, IO) -> true
+        ;
 
-        %% 2. Room M-BEG handler
-        ; catch(Room::action(RoomHandler), _, fail),
-          call(RoomHandler, m_beg, Verb, DO, IO) -> true
+        %% 2. Room M-BEG handler (intercepts if succeeds)
+          ( catch(Room::action(RoomHandler), _, fail),
+            call(RoomHandler, m_beg, Verb, DO, IO) ) -> true
+        ;
 
-        %% 3. Pre-action handler
-        ; actions::pre_action(Verb, DO, IO) -> true
+        %% 3. Pre-action gate check
+        %% pre_action is a guard: if a clause exists and fails, it means
+        %% the action is blocked (e.g. "You can't take that."). If it
+        %% succeeds or has no matching clause, continue to verb handler.
+          ( pre_action_check(Verb, DO, IO) ->
 
-        %% 4. Indirect object handler
-        ; ( IO \= none, io_obj(IO, IOObj),
-            catch(IOObj::action(IOHandler), _, fail),
-            call(IOHandler, Verb, DO, IO) ) -> true
+            %% 4. Indirect object handler (intercepts if succeeds)
+            ( ( IO \= none, io_obj(IO, IOObj),
+                catch(IOObj::action(IOHandler), _, fail),
+                call(IOHandler, Verb, DO, IO) ) -> true
+            ;
 
-        %% 5. Direct object handler
-        ; ( DO \= none,
-            catch(DO::action(DOHandler), _, fail),
-            call(DOHandler, Verb, DO, IO) ) -> true
+            %% 5. Direct object handler (intercepts if succeeds)
+              ( DO \= none,
+                catch(DO::action(DOHandler), _, fail),
+                call(DOHandler, Verb, DO, IO) ) -> true
+            ;
 
-        %% 6. Generic verb handler
-        ; call_verb(Verb, DO, IO) -> true
+            %% 6. Generic verb handler
+              call_verb(Verb, DO, IO) -> true
+            ;
 
-        %% 7. Room M-END handler
-        ; catch(Room::action(EndHandler), _, fail),
+            %% Default: no handler found
+              format("I don't know how to do that.~n", [])
+            )
+
+          ; true  %% pre_action gate failed = blocked, stop here
+          )
+        ),
+
+        %% 7. Room M-END handler (always runs after action)
+        ( catch(Room::action(EndHandler), _, fail),
           call(EndHandler, m_end, Verb, DO, IO) -> true
+        ;   true
+        ).
 
-        %% Default: no handler found
-        ; format("I don't know how to do that.~n", [])
+    %% pre_action_check/3 - returns true if no pre_action clause exists
+    %% for this verb, or if the pre_action clause succeeds. Fails only
+    %% when a pre_action clause exists and explicitly fails (= blocked).
+    :- private(pre_action_check/3).
+    pre_action_check(Verb, DO, IO) :-
+        ( catch(actions::pre_action(Verb, DO, IO), _, true) ->
+            true  %% pre_action succeeded or threw (caught as true)
+        ;
+            %% pre_action failed: is it because no clause exists, or
+            %% because the clause explicitly failed (blocked)?
+            %% Check if a clause head matches this verb at all.
+            ( \+ catch(actions::pre_action(Verb, _, _), _, fail) ->
+                true  %% no clause for this verb at all: not blocked
+            ;
+                fail  %% clause exists but failed: blocked
+            )
         ).
 
     :- private(io_obj/2).

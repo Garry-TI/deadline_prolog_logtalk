@@ -27,6 +27,7 @@
         init_global_vars,
         init_npc_locations,
         init_object_locations,
+        init_entity_initial_flags,
         init_object_flags,
         init_room_flags,
         init_pronouns.
@@ -231,7 +232,32 @@
         state::assertz(location(cornerstone, east_of_door)).
 
     %% ---------------------------------------------------------------
-    %% OBJECT INITIAL FLAGS
+    %% ENTITY INITIAL FLAGS (from object initial_flags/1 predicates)
+    %% Iterates over all entity/npc prototypes and asserts their flags.
+    %% ---------------------------------------------------------------
+
+    :- private(init_entity_initial_flags/0).
+    init_entity_initial_flags :-
+        forall(
+            ( extends_object(Obj, entity),
+              catch(Obj::initial_flags(Flags), _, Flags = []),
+              Flags \= [],
+              member(Flag, Flags)
+            ),
+            state::assertz(has_flag(Obj, Flag))
+        ),
+        %% Also handle NPC objects (extend npc which extends entity)
+        forall(
+            ( extends_object(Obj, npc),
+              catch(Obj::initial_flags(Flags), _, Flags = []),
+              Flags \= [],
+              member(Flag, Flags)
+            ),
+            state::assertz(has_flag(Obj, Flag))
+        ).
+
+    %% ---------------------------------------------------------------
+    %% OBJECT INITIAL FLAGS (manual overrides and additional flags)
     %% ---------------------------------------------------------------
 
     :- private(init_object_flags/0).
