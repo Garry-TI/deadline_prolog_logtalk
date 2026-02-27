@@ -692,12 +692,56 @@
         ; fail
         ).
 
-    %% NOTE-PAPER-F (pad)
-    object_action(V, note_paper, _IO) :-
+    %% NOTE-PAPER-F (pad) — ZIL: NOTE-PAPER-F in actions.zil
+    %% Key evidence: hidden impressions revealed by rubbing/shading with pencil
+    object_action(V, note_paper, IO) :-
         ( member(V, [v_read, v_examine]) ->
-            writeln("There doesn't seem to be anything written on the pad.")
+            ( state::global_val(note_read, true) ->
+                pad_read("Examination of the paper")
+            ;
+                writeln("There doesn't seem to be anything written on the pad.")
+            )
+        ; V = v_rub ->
+            ( IO = none ->
+                writeln("You should try rubbing or shading the pad with something.")
+            ; IO = pair(with, pencil) ->
+                pad_read("Shading the paper with the pencil")
+            ; IO = pencil ->
+                pad_read("Shading the paper with the pencil")
+            ;
+                writeln("You should try rubbing or shading the pad with something.")
+            )
+        ; V = v_rub_over, IO = pair(over, note_paper) ->
+            %% "rub pencil over pad" — PRSO=pencil, PRSI=pad, but dispatched as DO=pad
+            pad_read("Running the pencil over the paper")
+        ; V = v_run_over, IO = pair(over, note_paper) ->
+            pad_read("Running the pencil over the paper")
+        ; V = v_run_over, IO = pair(on, note_paper) ->
+            pad_read("Running the pencil over the paper")
+        ; V = v_hold_up ->
+            pad_read("Looking at the pad against the light")
         ; fail
         ).
+
+    %% PAD-READ helper — reveals hidden impressions on the notepad
+    :- private(pad_read/1).
+    pad_read(Method) :-
+        state::set_global(note_read, true),
+        format("~w reveals impressions left by writing on the previous sheet.~n", [Method]),
+        writeln("The writer must have borne down heavily, but only a few words come out"),
+        writeln("clearly:"),
+        nl,
+        writeln("  Baxter,"),
+        nl,
+        writeln("                  st time"),
+        writeln(" nsist             op       merg"),
+        writeln("       mnidy               Oth"),
+        writeln("          forc"),
+        writeln("         ocumen     y poss"),
+        writeln("  plica     y      Focus s"),
+        writeln("          recons"),
+        writeln("late!"),
+        writeln("                              rsha").
 
     %% DESK-CALENDAR-F
     object_action(V, desk_calendar, _IO) :-
@@ -730,10 +774,13 @@
         ; fail
         ).
 
-    %% PENCIL-F
-    object_action(V, pencil, _IO) :-
+    %% PENCIL-F — also handles "rub pencil over pad", "run pencil over pad"
+    object_action(V, pencil, IO) :-
         ( V = v_examine ->
             writeln("It's an ordinary pencil.")
+        ; member(V, [v_rub_over, v_run_over]),
+          ( IO = pair(over, note_paper) ; IO = pair(on, note_paper) ) ->
+            pad_read("Running the pencil over the paper")
         ; fail
         ).
 
@@ -746,10 +793,346 @@
         ; fail
         ).
 
-    %% TELEPHONE-F (basic examine)
+    %% TELEPHONE-F
     object_action(V, telephone, _IO) :-
         ( V = v_examine ->
             writeln("It's a standard telephone.")
+        ; V = v_take ->
+            writeln("You can't take the telephone.")
+        ; fail
+        ).
+
+    %% SUGAR-BOWL-F
+    object_action(V, sugar_bowl, _IO) :-
+        ( V = v_examine ->
+            writeln("It's a white porcelain bowl with a small amount of white powder in it.")
+        ; V = v_taste ->
+            writeln("It tastes like ordinary table sugar.")
+        ; fail
+        ).
+
+    %% FRAGMENT-F (pottery fragment — key evidence)
+    object_action(V, fragment, _IO) :-
+        ( V = v_examine ->
+            writeln("It's a small fragment of what looks like fine china. It has a trace"),
+            writeln("of brown discoloration.")
+        ; V = v_smell ->
+            writeln("It smells faintly of tea.")
+        ; fail
+        ).
+
+    %% NEWSPAPER-F
+    object_action(V, newspaper, _IO) :-
+        ( member(V, [v_read, v_examine]) ->
+            writeln("The lead story concerns the death of Marshall Robner, president of"),
+            writeln("Robner Corp. The death has been ruled a suicide. Robner is survived by"),
+            writeln("his wife Leslie, and son George."),
+            state::set_flag(newspaper, touchbit)
+        ; fail
+        ).
+
+    %% ENVELOPE-F
+    object_action(V, envelope, _IO) :-
+        ( V = v_examine ->
+            writeln("It's a plain white envelope addressed to Mrs. Leslie Robner.")
+        ; V = v_open ->
+            ( state::has_flag(envelope, openbit) ->
+                writeln("It's already open.")
+            ;
+                writeln("Opening the envelope, you find a letter inside."),
+                state::set_flag(envelope, openbit),
+                state::assertz(location(letter, envelope))
+            )
+        ; fail
+        ).
+
+    %% LETTER-F
+    object_action(V, letter, _IO) :-
+        ( member(V, [v_read, v_examine]) ->
+            writeln("The letter is from the law offices of Coates and Coates. It reads,"),
+            writeln("in part: \"...with regard to the new will, our initial opinion is that"),
+            writeln("the document would stand up in court...\"")
+        ; fail
+        ).
+
+    %% SUICIDE-NOTE-F
+    object_action(V, suicide_note, _IO) :-
+        ( member(V, [v_read, v_examine]) ->
+            writeln("The note reads: \"I have decided that I can no longer go on living in"),
+            writeln("this world. My apologies to those I leave behind. M. Robner.\"")
+        ; fail
+        ).
+
+    %% SAFE-F (hidden closet)
+    object_action(V, safe, _IO) :-
+        ( V = v_examine ->
+            ( state::has_flag(safe, openbit) ->
+                writeln("The safe is open.")
+            ;
+                writeln("It's a small wall safe with a combination lock.")
+            )
+        ; fail
+        ).
+
+    %% LIBRARY-BUTTON-F (hidden black button behind bookshelves)
+    object_action(V, library_button, _IO) :-
+        ( V = v_push ->
+            ( state::has_flag(hidden_door_l, openbit) ->
+                writeln("The bookshelf swings closed, concealing the entrance."),
+                state::clear_flag(hidden_door_l, openbit)
+            ;
+                writeln("The bookshelf swings open, revealing a small closet behind it!"),
+                state::set_flag(hidden_door_l, openbit)
+            )
+        ; V = v_examine ->
+            writeln("It's a small black button recessed into the back of the bookshelf.")
+        ; fail
+        ).
+
+    %% RED-BUTTON-F (hidden closet — toggles library door)
+    object_action(V, red_button, _IO) :-
+        ( V = v_push ->
+            ( state::has_flag(hidden_door_l, openbit) ->
+                writeln("The door to the library swings closed."),
+                state::clear_flag(hidden_door_l, openbit)
+            ;
+                writeln("The door to the library swings open."),
+                state::set_flag(hidden_door_l, openbit)
+            )
+        ; V = v_examine ->
+            writeln("It's a red button mounted on the wall.")
+        ; fail
+        ).
+
+    %% BLUE-BUTTON-F (hidden closet — toggles bedroom door)
+    object_action(V, blue_button, _IO) :-
+        ( V = v_push ->
+            ( state::has_flag(hidden_door_b, openbit) ->
+                writeln("The door to the master bedroom swings closed."),
+                state::clear_flag(hidden_door_b, openbit)
+            ;
+                writeln("The door to the master bedroom swings open."),
+                state::set_flag(hidden_door_b, openbit)
+            )
+        ; V = v_examine ->
+            writeln("It's a blue button mounted on the wall.")
+        ; fail
+        ).
+
+    %% LADDER-F
+    object_action(V, ladder, _IO) :-
+        ( V = v_examine ->
+            writeln("It's a wooden ladder about 15 feet long, caked with dirt.")
+        ; V = v_take ->
+            writeln("Taken."),
+            state::retract(location(ladder, _)),
+            state::assertz(location(ladder, player)),
+            state::clear_flag(ladder, ladder_flag),
+            state::clear_flag(ladder, ladder_flag_2)
+        ; fail
+        ).
+
+    %% HOUSE-F
+    object_action(V, house, _IO) :-
+        ( V = v_examine ->
+            writeln("The Robner house is a large colonial-style mansion set on a beautifully"),
+            writeln("landscaped estate.")
+        ; fail
+        ).
+
+    %% LAWN-F
+    object_action(V, lawn, _IO) :-
+        ( V = v_examine ->
+            writeln("The lawn is well manicured.")
+        ; fail
+        ).
+
+    %% ROSE-F
+    object_action(V, roses, _IO) :-
+        ( V = v_smell ->
+            writeln("The roses smell lovely.")
+        ; V = v_examine ->
+            writeln("The roses are of many colors -- red, white, pink and yellow.")
+        ; V = v_take ->
+            writeln("You'd better not. The gardener might see you."),
+            fail
+        ; fail
+        ).
+
+    %% LIBRARY-DOOR-F (broken oak door)
+    object_action(V, library_door, _IO) :-
+        ( V = v_examine ->
+            writeln("The solid oak door has been forcibly knocked off its hinges."),
+            writeln("It is lying just inside the entrance to the library.")
+        ; fail
+        ).
+
+    %% MUD-SPOT-F
+    object_action(V, mud_spot, _IO) :-
+        ( V = v_examine ->
+            writeln("They look like ordinary spots of dried mud.")
+        ; fail
+        ).
+
+    %% FOYER-TABLE-F
+    object_action(V, foyer_table, _IO) :-
+        ( V = v_examine ->
+            writeln("It's a fine marble-topped table in the foyer.")
+        ; fail
+        ).
+
+    %% TOILET-F
+    object_action(V, toilet, _IO) :-
+        ( V = v_examine ->
+            writeln("It's a standard toilet. You search behind the tank for the Tidy-Bowl man,"),
+            writeln("but he is nowhere to be found.")
+        ; V = v_flush ->
+            writeln("WHOOOOSH!")
+        ; fail
+        ).
+
+    %% SHOWER-F
+    object_action(V, shower, _IO) :-
+        ( V = v_examine ->
+            writeln("It's a standard shower stall.")
+        ; V = v_take ->
+            writeln("A shower would be nice, but this is hardly the place for it.")
+        ; fail
+        ).
+
+    %% BED-F
+    object_action(V, bed, _IO) :-
+        ( V = v_examine ->
+            writeln("It's a large, comfortable-looking bed.")
+        ; fail
+        ).
+
+    %% STEREO-F
+    object_action(V, stereo, _IO) :-
+        ( V = v_examine ->
+            writeln("It's a high-quality stereo system with turntable, amplifier, and speakers.")
+        ; fail
+        ).
+
+    %% LIQUOR-F (George's room)
+    object_action(V, liquor_cabinet, _IO) :-
+        ( V = v_examine ->
+            writeln("The liquor cabinet contains a generous supply of various spirits.")
+        ; V = v_drink ->
+            writeln("This is no time for a drink. You're on a case!")
+        ; fail
+        ).
+
+    %% PAINTINGS-F / SEURAT-F
+    object_action(V, paintings, _IO) :-
+        ( V = v_examine ->
+            writeln("The paintings are a fine collection of originals and prints.")
+        ; fail
+        ).
+
+    object_action(V, seurat, _IO) :-
+        ( V = v_examine ->
+            writeln("It's a beautiful Seurat painting of a riverside scene.")
+        ; fail
+        ).
+
+    %% PORTRAITS-F
+    object_action(V, portraits, _IO) :-
+        ( V = v_examine ->
+            writeln("The portraits depict several generations of Robners, all looking"),
+            writeln("serious and prosperous.")
+        ; fail
+        ).
+
+    %% AIR-F
+    object_action(V, air, _IO) :-
+        ( V = v_smell ->
+            state::current_room(Room),
+            ( member(Room, [rose_garden, in_roses]) ->
+                writeln("The sweet scent of roses fills the air.")
+            ; member(Room, [south_lawn, front_path, east_lawn, west_lawn]) ->
+                writeln("You can smell a faint breeze from the lake.")
+            ;
+                writeln("You smell nothing unusual.")
+            )
+        ; fail
+        ).
+
+    %% GROUND-F / FLOOR-F
+    object_action(V, ground, _IO) :-
+        ( V = v_examine ->
+            state::current_room(Room),
+            ( Room = library ->
+                writeln("The floor is covered with an expensive carpet.")
+            ; Room = foyer ->
+                writeln("The floor is made of polished marble.")
+            ;
+                writeln("You see nothing special about the ground.")
+            )
+        ; fail
+        ).
+
+    %% DUST-F (hidden closet)
+    object_action(V, dust, _IO) :-
+        ( V = v_examine ->
+            writeln("There is a thin layer of dust on most surfaces.")
+        ; fail
+        ).
+
+    %% BAXTER-PAPERS-F (in safe)
+    object_action(V, baxter_papers, _IO) :-
+        ( member(V, [v_read, v_examine]) ->
+            writeln("These are legal documents pertaining to the proposed merger of Robner"),
+            writeln("Corp. with the Omnidyne Corporation. The terms would have given Baxter"),
+            writeln("a considerable amount of money and power in the new company.")
+        ; fail
+        ).
+
+    %% NEW-WILL-F (in safe)
+    object_action(V, new_will, _IO) :-
+        ( member(V, [v_read, v_examine]) ->
+            writeln("This is a draft of a new will, apparently written recently by"),
+            writeln("Mr. Robner. Under the terms of this will, George Robner would"),
+            writeln("receive only a small trust, while the bulk of the estate would"),
+            writeln("go to various charities and research foundations.")
+        ; fail
+        ).
+
+    %% MEDICINE cabinet items
+    %% Medicine bottles — examine shows label
+    object_action(V, loblo_bottle, _IO) :-
+        ( member(V, [v_read, v_examine]) ->
+            writeln("The label reads: \"Frobizz Pharmacy #69105"),
+            writeln("Ms. S. Dunbar"),
+            writeln("LoBLO - Take 1 tablet 3 times daily"),
+            writeln("Fizmo Labs, Ltd. - Kingston, Ont."),
+            writeln("LoBLO Brand of Methsparin, USP 10mg Tablets"),
+            writeln("Warning: LoBLO may be dangerous when used in combination"),
+            writeln("with other medications.\"")
+        ; fail
+        ).
+
+    object_action(V, loblo, _IO) :-
+        ( V = v_examine ->
+            writeln("They are small white tablets.")
+        ; fail
+        ).
+
+    object_action(V, sneezo_bottle, _IO) :-
+        ( member(V, [v_read, v_examine]) ->
+            writeln("The label reads: \"Sneezo: For temporary relief of nasal congestion.\"")
+        ; fail
+        ).
+
+    object_action(V, allergone_bottle, _IO) :-
+        ( member(V, [v_read, v_examine]) ->
+            writeln("The label reads: \"Allergone: For relief of allergy symptoms.\"")
+        ; fail
+        ).
+
+    object_action(V, dum_kof_bottle, _IO) :-
+        ( member(V, [v_read, v_examine]) ->
+            writeln("The label reads: \"Dum-Kof: Effective cough suppressant.\"")
         ; fail
         ).
 

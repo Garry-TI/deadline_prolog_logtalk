@@ -138,6 +138,9 @@
     verb_handler(v_smell, DO, _)           :- v_smell(DO).
     verb_handler(v_listen, DO, _)          :- v_listen(DO).
     verb_handler(v_rub, DO, _)             :- v_rub(DO).
+    verb_handler(v_rub_over, _, _)        :- writeln("That doesn't seem to do anything.").
+    verb_handler(v_run_over, _, _)        :- writeln("That doesn't seem to do anything.").
+    verb_handler(v_hold_up, _, _)         :- writeln("That doesn't seem to reveal anything.").
     verb_handler(v_shake, DO, _)           :- v_shake(DO).
     verb_handler(v_wave, DO, _)            :- v_wave(DO).
     verb_handler(v_squeeze, DO, _)         :- v_squeeze(DO).

@@ -111,6 +111,9 @@
     verb_command(cmd(v_take, DO, pair(from, IO))) --> [take], noun_phrase(DO), [from], noun_phrase(IO).
     verb_command(cmd(v_take, DO, pair(out_of, IO))) --> [take], noun_phrase(DO), [out], noun_phrase(IO).
     verb_command(cmd(v_take, DO, pair(off_of, IO))) --> [take], noun_phrase(DO), [off], noun_phrase(IO).
+    %% HOLD UP: "hold pad up to light" → V-HOLD-UP
+    verb_command(cmd(v_hold_up, DO, pair(to, IO))) --> [hold], noun_phrase(DO), [up], [to], noun_phrase(IO).
+    verb_command(cmd(v_hold_up, DO, pair(to, IO))) --> [hold], [up], noun_phrase(DO), [to], noun_phrase(IO).
 
     verb_command(cmd(v_drop, DO, none)) --> [drop], noun_phrase(DO).
     verb_command(cmd(v_drop, DO, none)) --> [leave], noun_phrase(DO).
@@ -319,8 +322,12 @@
     verb_command(cmd(v_listen, DO, none))    --> [listen], [at], noun_phrase(DO).
     verb_command(cmd(v_rub, DO, none))       --> [rub], noun_phrase(DO).
     verb_command(cmd(v_rub, DO, pair(with, IO))) --> [rub], noun_phrase(DO), [with], noun_phrase(IO).
+    verb_command(cmd(v_rub, DO, pair(with, IO))) --> [shade], noun_phrase(DO), [with], noun_phrase(IO).
     verb_command(cmd(v_rub_over, DO, pair(over, IO))) --> [rub], noun_phrase(DO), [over], noun_phrase(IO).
     verb_command(cmd(v_rub_over, DO, pair(on, IO)))   --> [rub], noun_phrase(DO), [on], noun_phrase(IO).
+    %% RUN-OVER: "run pencil over pad" → V-RUN-OVER
+    verb_command(cmd(v_run_over, DO, pair(over, IO))) --> [run], noun_phrase(DO), [over], noun_phrase(IO).
+    verb_command(cmd(v_run_over, DO, pair(on, IO)))   --> [run], noun_phrase(DO), [on], noun_phrase(IO).
     verb_command(cmd(v_shake, DO, none))     --> [shake], noun_phrase(DO).
     verb_command(cmd(v_squeeze, DO, none))   --> [squeeze], noun_phrase(DO).
     verb_command(cmd(v_wave, DO, none))      --> [wave], noun_phrase(DO).
