@@ -59,8 +59,186 @@
         ).
 
     %% ---------------------------------------------------------------
-    %% ROOM ACTION HANDLERS
-    %% Called with phase (m_beg, m_end, m_enter, m_look) by PERFORM.
+    %% ROOM LOOK HANDLERS (M-LOOK)
+    %% Called by describe_current_room to produce dynamic room descriptions.
+    %% ZIL: each room's ACTION routine checks RARG = M-LOOK.
+    %% ---------------------------------------------------------------
+
+    :- public(room_look/1).
+
+    room_look(front_path) :- !,
+        ddesc("You are at the Robners' front door, which is ", front_door, "."),
+        writeln("You can walk around the house from here to the east or west. To the south a"),
+        writeln("rolling lawn leads to the entrance of the estate.").
+
+    room_look(rose_garden) :- !,
+        writeln("You are at the edge of a large rose garden, meticulously maintained by the"),
+        writeln("gardener, Mr. McNabb. He is said to be exceedingly proud of this particular"),
+        writeln("garden, which is the envy of the neighbors. Rows of roses are neatly arranged"),
+        writeln("and the sweet fragrance of the flowers is worth a trip here in itself. An"),
+        writeln("orchard to the east contains many varieties of fruit trees and wide lawns lie"),
+        writeln("to the west and north. The roses themselves are to the south, filling the area"),
+        writeln("between you and the back of the house.").
+
+    room_look(in_orchard) :- !,
+        writeln("You are amidst lovely trees bearing apples, pears, peaches, and other fruits."),
+        writeln("A grape arbor and several berry bushes may also be seen. The kitchen window"),
+        writeln("and east side of the house are just to your south, and a path skirts the"),
+        writeln("orchard to your north."),
+        ( state::global_val(ladder_flag_2, true) ->
+            writeln("A ladder is leaning against the balcony above.")
+        ;   writeln("There is no way into the house from here.")
+        ).
+
+    room_look(in_roses) :- !,
+        writeln("You are among rows of roses. The ground is soft, and your footsteps leave"),
+        writeln("a rather bad impression as many poor seedlings are trampled underfoot. A"),
+        writeln("safer place to admire the flowers lies to the north. A window to the south"),
+        writeln("allows a view into the house."),
+        ( state::global_val(ladder_flag, true) ->
+            writeln("A ladder is leaning against the house, its upper end against a balcony"),
+            writeln("above.")
+        ;   writeln("There is no way into the house from here.")
+        ),
+        ( \+ state::has_flag(hole, invisible) ->
+            writeln("There are holes in the soft dirt near your feet.")
+        ;   true
+        ).
+
+    room_look(foyer) :- !,
+        ddesc("This is the foyer of the Robner house, beautifully appointed with a fine\ncrystal chandelier, marble floors, and a large marble-topped table. The front\ndoor, to the south, is ", front_door, ". The foyer continues north.").
+
+    room_look(shall_1) :- !,
+        ddesc("You are in an east-west hallway south of the staircase. A door to the south\nis ", rourke_door, ".").
+
+    room_look(shall_2) :- !,
+        ddesc("This is the end of the east-west hallway. To the south a small door\nis ", south_closet_door, "."),
+        ddesc("Another door, to the east, is ", rourke_bath_door, ".").
+
+    room_look(rourke_room) :- !,
+        ddesc("This is the bedroom of the housekeeper, Mrs. Rourke, and is very simply\nfurnished. A single bed, flanked by bare wooden end tables, sits below a\nclosed window on the south end of the room. The floor is hardwood, with no\nrug. The only exit is a door to the north, which is ", rourke_door, ".").
+
+    room_look(rourke_bath) :- !,
+        ddesc("This is Mrs. Rourke's bathroom. Aside from the usual bathroom fixtures\nare two shelves affixed to the wall. The door at the west side of the\nroom is ", rourke_bath_door, ".").
+
+    room_look(living_room) :- !,
+        ddesc("This is a large and impressive room, whose furnishings bespeak the great\npersonal wealth of the Robners. The south side of the room is a large bay\nwindow, now ", bay_window, ", which looks out onto the front yard."),
+        writeln("A wood pile sits beside a huge fieldstone fireplace. A double doorway leading"),
+        writeln("to the main hall is the only exit. Pictures of Mrs. Robner's colonial ancestors"),
+        writeln("line one wall. The room contains formal seating for at least fifteen people,"),
+        writeln("in several groups of chairs and couches. Tables and cabinets, all of the"),
+        writeln("finest mahogany and walnut, complete the furnishings. On one of the tables is"),
+        writeln("a telephone.").
+
+    room_look(corridor_1) :- !,
+        write("You are just west of the staircase. There are doors on both sides (north and\nsouth) of the hallway, which continues west. "),
+        ( state::has_flag(dunbar_door, openbit) ->
+            ( state::has_flag(master_bedroom_door, openbit) ->
+                writeln("Both doors are open.")
+            ;   writeln("The door to the south is open.")
+            )
+        ; state::has_flag(master_bedroom_door, openbit) ->
+            writeln("The door to the north is open.")
+        ;   writeln("Both doors are closed.")
+        ).
+
+    room_look(corridor_3) :- !,
+        ddesc("This section of hallway is near the west end. Through the window at the end\nof the hall you can see some trees and the lake beyond. The hallway continues\neast and west, and a door to the south is ", george_door, ".").
+
+    room_look(corridor_4) :- !,
+        writeln("This is the west end of the upstairs hall. To the north is the library,"),
+        writeln("where Mr. Robner was found. Its solid oak door has been knocked down and"),
+        writeln("is lying just inside the entrance to the library. A window which cannot"),
+        writeln("be opened is at the end of the hallway.").
+
+    room_look(library) :- !,
+        writeln("This is the library where Mr. Robner's body was found. It is decorated in a"),
+        writeln("simple but comfortable style. Mr. Robner obviously spent a great deal of time"),
+        writeln("here. A wide executive desk sits before tall balcony windows which lie at the"),
+        writeln("north of the room. A telephone is sitting on the desk. The east side of the"),
+        writeln("room is composed of three large bookshelf units containing numerous volumes"),
+        writeln("on many topics. The floor is carpeted from wall to wall. The massive oak door"),
+        writeln("which blocked the entrance has been forcibly knocked off its hinges and is"),
+        writeln("lying by the doorway."),
+        ( state::has_flag(library_balcony_door, openbit) ->
+            writeln("The window to the balcony has been opened.")
+        ;   true
+        ),
+        ( state::has_flag(hidden_door_l, openbit) ->
+            writeln("The bookshelf unit on the far left has been swung open,"),
+            writeln("revealing a room behind it!")
+        ;   true
+        ).
+
+    room_look(library_balcony) :- !,
+        ddesc("The balcony is bare of furniture, though it has a beautiful view of the rose\ngarden, the north lawn and the lake. A metal railing around the balcony\nprevents an accidental drop to the thorny roses below. The window between the\nbalcony and the library is ", library_balcony_door, "."),
+        ( state::global_val(ladder_flag, true) ->
+            writeln("The top of a ladder is resting on the metal railing.")
+        ;   true
+        ).
+
+    room_look(hidden_closet) :- !,
+        write("This is a secret room situated between the library and the master bedroom.\nThe room is bare and somewhat dusty, as if it were not often used. An\nunmarked switchplate surrounds two buttons, one blue and one red. A formidable\nsafe is embedded in the south wall."),
+        ( state::has_flag(safe, openbit) ->
+            writeln(" The heavy safe door is wide open.")
+        ;   nl
+        ),
+        ( state::has_flag(hidden_door_l, openbit) ->
+            writeln("The library can be seen through a door to the west.")
+        ; state::has_flag(hidden_door_b, openbit) ->
+            writeln("The master bedroom can be seen through a door to the east.")
+        ;   true
+        ).
+
+    room_look(master_bedroom) :- !,
+        ddesc("This is the Robners' master bedroom, decorated in the Queen Anne style. A\nlarge four-poster bed with paired end tables fills the south end of the room.\nOn one of the end tables is a telephone. Dressers, a small chair, and a lounge\nare against the walls. The north wall contains a balcony window, which is\n", bedroom_balcony_door, ". An open doorway leads east to the bathroom. A large\nmirror with a gilt frame hangs on the west wall."),
+        ( state::has_flag(hidden_door_b, openbit) ->
+            writeln("Part of the west wall has been swung away, revealing a hidden closet.")
+        ;   true
+        ).
+
+    room_look(bedroom_balcony) :- !,
+        ddesc("This balcony is atop the orchard, with the tallest of the fruit trees rising\nto about the level of the balcony. A metal railing surrounds the balcony,\npreventing a precipitous descent. A glass door leading to the master bedroom\nis ", bedroom_balcony_door, "."),
+        ( state::global_val(ladder_flag_2, true) ->
+            writeln("The top of a ladder is visible here, leaning on the railing.")
+        ;   true
+        ).
+
+    room_look(shall_11) :- !,
+        ddesc("The hallway turns a corner here and continues east. To the north is the\nhead of the stairs. A door to the south is ", dunbar_bath_door, ".").
+
+    room_look(dunbar_bath) :- !,
+        write("This bathroom contains the usual sink, toilet, and bath. A medicine\ncabinet, "),
+        ( state::has_flag(dunbar_cabinet, openbit) ->
+            write("lying partially open")
+        ;   write("closed")
+        ),
+        ddesc(", is above the sink. A door to the north\nis ", dunbar_bath_door, ".").
+
+    room_look(dunbar_room) :- !,
+        ddesc("This is Ms. Dunbar's room. It is furnished in the usual style, with a few\nadditions indicative of Ms. Dunbar's taste. The bedroom door\nis ", dunbar_door, ".").
+
+    room_look(george_bath) :- !,
+        ddesc("This is George's bathroom, with all the appropriate fixtures. Shaving gear\nsits near the sink. The door, to the west, is ", george_bath_door, ".").
+
+    room_look(george_room) :- !,
+        write("This is George's bedroom. In addition to the normal furnishings, there\nis a small liquor cabinet, and a stereo with records and tapes. The door,\nleading to the hallway to the north, is "),
+        ( state::has_flag(george_door, openbit) -> write("open") ; write("closed") ),
+        ddesc(". Another door, to the east, is ", george_bath_door, ".").
+
+    %% Fallback: no room_look handler - fail so describe_current_room uses ldesc
+    room_look(_) :- fail.
+
+    %% ddesc(+Prefix, +DoorEntity, +Suffix) - print text with door state
+    :- private(ddesc/3).
+    ddesc(Prefix, Door, Suffix) :-
+        write(Prefix),
+        ( state::has_flag(Door, openbit) -> write("open") ; write("closed") ),
+        writeln(Suffix).
+
+    %% ---------------------------------------------------------------
+    %% ROOM ACTION HANDLERS (M-BEG, M-END, M-ENTER)
+    %% Called with phase (m_beg, m_end, m_enter) by PERFORM.
     %% ---------------------------------------------------------------
 
     %% in_roses action: gardener anger when player enters rose garden
@@ -440,18 +618,5 @@
     %% Coates arrives
     :- public(i_coates_arrive/0).
     i_coates_arrive :- npc_ai::i_coates_arrive.
-
-    %% ---------------------------------------------------------------
-    %% UTILITY
-    %% ---------------------------------------------------------------
-
-    %% Format a door open/closed description (ZIL: DDESC macro)
-    :- public(ddesc/3).
-    ddesc(Prefix, Door, Suffix) :-
-        ( state::has_flag(Door, openbit) ->
-            State = "open"
-        ;   State = "closed"
-        ),
-        format("~w~w~w~n", [Prefix, State, Suffix]).
 
 :- end_object.

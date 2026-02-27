@@ -277,16 +277,20 @@
         ( catch(Room::desc(ShortDesc), _, ShortDesc = Room) -> true ; ShortDesc = Room ),
         nl,
         writeln(ShortDesc),
-        %% Long description (only if not seen before)
+        %% Long description: try room_look action first, then static ldesc
         ( \+ state::has_flag(Room, touchbit) ->
-            ( catch(Room::fdesc(FD), _, fail) -> writeln(FD)
+            ( catch(actions::room_look(Room), _, fail) -> true
+            ; catch(Room::fdesc(FD), _, fail) -> writeln(FD)
             ; catch(Room::ldesc(LD), _, fail) -> writeln(LD)
             ; true
             )
         ;
-            %% Verbose mode: always show long desc
+            %% Verbose mode or room_look: always show desc
             ( state::global_val(verbose_mode, true) ->
-                ( catch(Room::ldesc(LD), _, fail) -> writeln(LD) ; true )
+                ( catch(actions::room_look(Room), _, fail) -> true
+                ; catch(Room::ldesc(LD), _, fail) -> writeln(LD)
+                ; true
+                )
             ;   true
             )
         ),
