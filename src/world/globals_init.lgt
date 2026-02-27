@@ -299,20 +299,9 @@
         state::assertz(has_flag(safe, contbit)),   % NOT open - requires combination
         state::assertz(has_flag(dunbar_cabinet, contbit)),
 
-        %% NPC person flags
-        state::assertz(has_flag(player, person)),
-        state::assertz(has_flag(gardener, person)),
-        state::assertz(has_flag(gardener, openbit)),
-        state::assertz(has_flag(dunbar, person)),
-        state::assertz(has_flag(dunbar, openbit)),
-        state::assertz(has_flag(george, person)),
-        state::assertz(has_flag(george, openbit)),
-        state::assertz(has_flag(mrs_robner, person)),
-        state::assertz(has_flag(mrs_robner, openbit)),
-        state::assertz(has_flag(rourke, person)),
-        state::assertz(has_flag(rourke, openbit)),
-        state::assertz(has_flag(baxter, person)),
-        state::assertz(has_flag(coates, person)).
+        %% Player person flag (player is not an NPC prototype, so not
+        %% covered by init_entity_initial_flags)
+        state::assertz(has_flag(player, person)).
 
     %% ---------------------------------------------------------------
     %% ROOM INITIAL FLAGS
