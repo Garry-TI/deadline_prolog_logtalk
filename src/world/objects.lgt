@@ -961,6 +961,7 @@ prior to using these tablets.").
     synonym([couple, tablets, pills, loblo]).
     adjective([loblo]).
     initial_flags([takebit, drugbit]).
+    pill_count(10).
     size(4).
     initial_location(loblo_bottle).
 :- end_object.
@@ -983,6 +984,7 @@ prior to using these tablets.").
     synonym([pills, tablets, aspirin, handful]).
     adjective([aspirin]).
     initial_flags([takebit, drugbit]).
+    pill_count(15).
     size(4).
     initial_location(aspirin_bottle).
 :- end_object.
@@ -1071,6 +1073,7 @@ Take 1 tablet every 3 hours as needed\n\nSniffle Labs\nSneezo Tablets").
     synonym([handful, tablets, decong, sneezo]).
     adjective([decong, sneezo]).
     initial_flags([takebit, drugbit]).
+    pill_count(20).
     size(4).
     initial_location(sneezo_bottle).
 :- end_object.
@@ -1098,6 +1101,7 @@ of the reach of children!").
     synonym([bunch, tablets, allergone]).
     adjective([allergone]).
     initial_flags([takebit, drugbit]).
+    pill_count(15).
     size(4).
     initial_location(allergone_bottle).
 :- end_object.
@@ -1165,6 +1169,7 @@ of children. May be harmful or fatal in sufficient dosage.").
     synonym([couple, tablets, ebullion]).
     adjective([ebullion]).
     initial_flags([takebit, drugbit]).
+    pill_count(3).
     size(4).
     initial_location(ebullion_bottle).
 :- end_object.

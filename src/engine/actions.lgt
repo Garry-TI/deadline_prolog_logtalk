@@ -1359,15 +1359,20 @@
         ; fail
         ).
 
+    %% MEDICINE-BOTTLE-F (ZIL: actions.zil 3336-3338)
     object_action(V, sneezo_bottle, _IO) :-
         ( member(V, [v_read, v_examine]) ->
             writeln("The label reads: \"Sneezo: For temporary relief of nasal congestion.\"")
+        ; V = v_count ->
+            writeln("It's hard to tell with the bottle closed.")
         ; fail
         ).
 
     object_action(V, allergone_bottle, _IO) :-
         ( member(V, [v_read, v_examine]) ->
             writeln("The label reads: \"Allergone: For relief of allergy symptoms.\"")
+        ; V = v_count ->
+            writeln("It's hard to tell with the bottle closed.")
         ; fail
         ).
 
@@ -1440,12 +1445,25 @@
         ; fail
         ).
 
-    %% SILVERWARE-F
+    %% SILVERWARE-F (ZIL: actions.zil 4112-4121)
     object_action(V, silverware, _IO) :-
         ( V = v_examine ->
             writeln("The silver is of the finest quality and design.")
         ; V = v_take ->
-            writeln("The silverware is not yours to take.")
+            writeln("Although the set would make a fine addition to your home, you resist the"),
+            writeln("temptation. You would never get away with it anyway, as Mrs. Robner will no"),
+            writeln("doubt count the silverware upon your departure.")
+        ; V = v_count ->
+            writeln("There are 16 complete sets of silver.")
+        ; fail
+        ).
+
+    %% GLASSES-F (ZIL: actions.zil 4123-4125)
+    object_action(V, glasses, _IO) :-
+        ( V = v_count ->
+            writeln("There are at least two dozen.")
+        ; V = v_take ->
+            writeln("You would be an impolite guest to fool with these things without cause.")
         ; fail
         ).
 
@@ -1459,6 +1477,8 @@
             writeln("Each one is hand-painted and depicts a scene from Greek mythology.")
         ; V = v_take ->
             writeln("Mrs. Robner would not appreciate your taking her valuable china.")
+        ; V = v_count ->
+            writeln("There are six hand-painted cups.")
         ; fail
         ).
 
@@ -1467,6 +1487,8 @@
             writeln("Each one is hand-painted and depicts a scene from Greek mythology.")
         ; V = v_take ->
             writeln("Mrs. Robner would not appreciate your taking her valuable china.")
+        ; V = v_count ->
+            writeln("There are seven hand-painted saucers.")
         ; fail
         ).
 
@@ -1475,6 +1497,8 @@
             writeln("Each one is hand-painted and depicts a scene from Greek mythology.")
         ; V = v_take ->
             writeln("Mrs. Robner would not appreciate your taking her valuable china.")
+        ; V = v_count ->
+            writeln("There are eight of both the large and the small plates.")
         ; fail
         ).
 
@@ -1483,6 +1507,8 @@
             writeln("Each one is hand-painted and depicts a scene from Greek mythology.")
         ; V = v_take ->
             writeln("Mrs. Robner would not appreciate your taking her valuable china.")
+        ; V = v_count ->
+            writeln("There are eight large and small plates, seven saucers, and six cups.")
         ; fail
         ).
 

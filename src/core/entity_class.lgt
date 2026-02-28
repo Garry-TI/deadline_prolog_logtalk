@@ -32,6 +32,7 @@
     :- public(action/1).
     :- public(article/1).
     :- public(read_text/1).
+    :- public(pill_count/1).
 
     size(5).
     capacity(100).

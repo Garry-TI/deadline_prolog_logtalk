@@ -159,6 +159,7 @@
     verb_handler(v_phone, DO, _)           :- v_phone(DO).
     verb_handler(v_attack, DO, _)          :- v_attack(DO).
     verb_handler(v_kill, DO, _)            :- v_kill(DO).
+    verb_handler(v_count, DO, _)           :- v_count(DO).
 
     %% ---------------------------------------------------------------
     %% LOOK (V-LOOK)
@@ -549,6 +550,31 @@
         clock::clocker,
         N1 is N - 1,
         wait_ticks(N1).
+
+    %% ---------------------------------------------------------------
+    %% COUNT (V-COUNT)
+    %% ZIL: verbs.zil lines 1313-1324
+    %% Drugs with DRUGBIT flag have a pill_count property.
+    %% ---------------------------------------------------------------
+
+    :- public(v_count/1).
+    v_count(none) :- writeln("Count what?").
+    v_count(DO) :-
+        ( state::has_flag(DO, drugbit) ->
+            ( catch(DO::pill_count(Cnt), _, Cnt = 0) ->
+                ( Cnt =:= 1 ->
+                    writeln("There is 1 of them.")
+                ;
+                    format("There are ~w of them.~n", [Cnt])
+                )
+            ;
+                writeln("There are some of them.")
+            )
+        ; DO = end_table ->
+            writeln("There are two in a pair, or have you forgotten?")
+        ;
+            writeln("Unless you are drunk, one.")
+        ).
 
     %% ---------------------------------------------------------------
     %% SEARCH
