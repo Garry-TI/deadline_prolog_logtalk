@@ -170,8 +170,17 @@
 
     :- public(get_exit/2).
     get_exit(Dir, Target) :-
-        ::exit(Dir, Target, Condition),
+        normalize_direction(Dir, NDir),
+        ::exit(NDir, Target, Condition),
         check_condition(Condition).
+
+    %% Map long direction names to the short forms used in exit/3 facts.
+    :- private(normalize_direction/2).
+    normalize_direction(northeast, ne) :- !.
+    normalize_direction(northwest, nw) :- !.
+    normalize_direction(southeast, se) :- !.
+    normalize_direction(southwest, sw) :- !.
+    normalize_direction(Dir, Dir).
 
     :- private(check_condition/1).
     check_condition(always).
