@@ -153,7 +153,7 @@
     verb_handler(v_mumble, _, _)           :- writeln("Mumble mumble.").
     verb_handler(v_skip, _, _)             :- writeln("You skip for a moment.").
     verb_handler(v_wait_for, DO, _)        :- v_wait_for(DO).
-    verb_handler(v_wait_until, DO, _)      :- v_wait_for(DO).
+    verb_handler(v_wait_until, DO, _)      :- v_wait_until(DO).
     verb_handler(v_follow, DO, _)          :- v_follow(DO).
     verb_handler(v_call, DO, _)            :- v_call(DO).
     verb_handler(v_phone, DO, _)           :- v_phone(DO).
@@ -510,46 +510,135 @@
     v_climb_down(_DO) :- game_loop::move_player(down).
 
     %% ---------------------------------------------------------------
-    %% WAIT
+    %% WAIT SYSTEM (ZIL: V-WAIT, V-WAIT-FOR, V-WAIT-UNTIL)
+    %% ZIL: verbs.zil lines 660-751
+    %%
+    %% V-WAIT(Ticks, Who, IsInternal):
+    %%   Advances Ticks clock cycles, running events each tick.
+    %%   If Who is set, stops early when Who arrives in the room or
+    %%   (for Duffy) when fingerprint_obj becomes none.
+    %%   Prints current time at end.
     %% ---------------------------------------------------------------
 
     :- public(v_wait/0).
-    v_wait :- writeln("Time passes.").
+    v_wait :-
+        writeln("Time passes..."),
+        do_wait(3, none),
+        v_time.
 
-    %% V-WAIT-FOR: ZIL verbs.zil lines 716-736
+    %% V-WAIT-FOR (ZIL: verbs.zil lines 716-736)
+    %% Handles: wait for <number>, wait for <person>, wait for duffy, wait for noon
     :- public(v_wait_for/1).
     v_wait_for(none) :- writeln("Wait for what?").
     v_wait_for(DO) :-
-        ( DO = global_duffy ->
-            ( state::global_val(fingerprint_obj, Obj), Obj \= none ->
-                %% Duffy is at the lab — advance time until he returns
+        ( DO = intnum(N) ->
+            %% "wait for N" or "wait N" — N is minutes/ticks
+            state::global_val(present_time, PT),
+            ( N > PT ->
+                %% Number > present_time: treat as "wait until" time
+                v_wait_until(intnum(N))
+            ; N > 180 ->
+                writeln("That's too long to wait.")
+            ;
                 writeln("Time passes..."),
-                wait_ticks(30)
+                do_wait(N, none),
+                v_time
+            )
+        ; DO = noon ->
+            %% "wait for noon" -> redirect to wait until noon
+            v_wait_until(noon)
+        ; DO = global_duffy ->
+            ( state::global_val(fingerprint_obj, Obj), Obj \= none ->
+                writeln("Time passes..."),
+                do_wait(10000, global_duffy),
+                v_time
             ;
                 writeln("You would wait quite a while, since Sergeant Duffy is always"),
                 writeln("nearby, but never approaches you unless requested.")
             )
         ; state::has_flag(DO, person) ->
-            %% Wait for an NPC to arrive
             state::current_room(Room),
             ( state::location(DO, Room) ->
-                ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
-                format("~w is already here!~n", [D])
+                writeln("That person is already here!")
             ;
                 writeln("Time passes..."),
-                wait_ticks(30)
+                do_wait(10000, DO),
+                v_time
             )
         ;
             writeln("Not a good idea. You might wait all day.")
         ).
 
-    :- private(wait_ticks/1).
-    wait_ticks(0) :- !.
-    wait_ticks(N) :-
+    %% V-WAIT-UNTIL (ZIL: verbs.zil lines 738-751)
+    %% Handles: wait until <hour>, wait until noon
+    :- public(v_wait_until/1).
+    v_wait_until(none) :- writeln("Wait until when?").
+    v_wait_until(DO) :-
+        ( DO = noon ->
+            %% noon = tick 720 (12 * 60)
+            TargetTick = 720,
+            wait_until_tick(TargetTick)
+        ; DO = intnum(N) ->
+            %% Convert hour to game ticks
+            %% ZIL logic: < 8 means PM (add 12, * 60), < 13 means AM (* 60)
+            ( N < 8 ->
+                TargetTick is (N + 12) * 60
+            ; N < 13 ->
+                TargetTick is N * 60
+            ;
+                %% Already in ticks?
+                TargetTick = N
+            ),
+            wait_until_tick(TargetTick)
+        ;
+            writeln("Your sanity is coming into question.")
+        ).
+
+    :- private(wait_until_tick/1).
+    wait_until_tick(TargetTick) :-
+        state::global_val(present_time, PT),
+        ( TargetTick > PT ->
+            Diff is TargetTick - PT,
+            writeln("Time passes..."),
+            do_wait(Diff, none),
+            v_time
+        ;
+            writeln("You are clearly ahead of your time.")
+        ).
+
+    %% do_wait(+Ticks, +Who)
+    %% Core wait loop: advances Ticks clock cycles. If Who is an NPC,
+    %% stops early when they arrive in the current room.
+    %% If Who is global_duffy, stops when fingerprint_obj becomes none.
+    :- private(do_wait/2).
+    do_wait(Ticks, Who) :-
+        do_wait_loop(Ticks, Who, 0).
+
+    :- private(do_wait_loop/3).
+    do_wait_loop(0, _Who, _WaitCount) :- !.
+    do_wait_loop(N, Who, WaitCount) :-
         N > 0,
         clock::clocker,
         N1 is N - 1,
-        wait_ticks(N1).
+        %% Check stop conditions
+        ( Who = global_duffy,
+          state::global_val(fingerprint_obj, none) ->
+            true  % Duffy returned from lab, stop waiting
+        ; Who \= none, Who \= global_duffy,
+          state::current_room(Room),
+          state::location(Who, Room) ->
+            ( catch(Who::desc(D), _, D = Who) -> true ; D = Who ),
+            format("~w, for whom you are waiting, has arrived.~n", [D])
+        ; Who \= none, WaitCount > 30 ->
+            ( catch(Who::desc(D2), _, D2 = Who) -> true ; D2 = Who ),
+            format("~w still hasn't arrived.~n", [D2]),
+            %% In ZIL this prompts Y/N; we just stop after 30 ticks of waiting
+            true
+        ;
+            %% Continue waiting
+            WC1 is WaitCount + 1,
+            do_wait_loop(N1, Who, WC1)
+        ).
 
     %% ---------------------------------------------------------------
     %% COUNT (V-COUNT)

@@ -308,9 +308,17 @@
     %% WAIT
     %% ---------------------------------------------------------------
 
-    verb_command(cmd(v_wait, none, none)) --> [wait].
-    verb_command(cmd(v_wait_for, DO, none))    --> [wait], [for], noun_phrase(DO).
+    %% "wait for 5" / "wait 5" — number of minutes
+    verb_command(cmd(v_wait_for, intnum(N), none)) --> [wait], [for], number_token(N).
+    verb_command(cmd(v_wait_for, intnum(N), none)) --> [wait], number_token(N).
+    %% "wait until 12" / "wait until noon"
+    verb_command(cmd(v_wait_until, intnum(N), none)) --> [wait], [until], number_token(N).
+    verb_command(cmd(v_wait_until, noon, none)) --> [wait], [until], [noon].
     verb_command(cmd(v_wait_until, DO, none))  --> [wait], [until], noun_phrase(DO).
+    %% "wait for noon" — shorthand
+    verb_command(cmd(v_wait_until, noon, none)) --> [wait], [for], [noon].
+    %% "wait for <person/noun>"
+    verb_command(cmd(v_wait_for, DO, none))    --> [wait], [for], noun_phrase(DO).
     verb_command(cmd(v_wait_for, DO, none))    --> [wait], noun_phrase(DO).
 
     %% ---------------------------------------------------------------
