@@ -360,6 +360,7 @@
     %% Call once per move for each NPC to advance their schedule.
     %% ---------------------------------------------------------------
 
+    %% tick_npc/1 - advance NPC one step along their path (called every tick)
     :- public(tick_npc/1).
     tick_npc(NPC) :-
         ( state::npc_goal_enabled(NPC) ->
@@ -367,50 +368,112 @@
         ;   true
         ).
 
+    %% I-FOLLOW: move all NPCs one step each tick (ZIL: I-FOLLOW)
+    :- public(i_follow/0).
+    i_follow :-
+        tick_npc(gardener),
+        tick_npc(baxter),
+        tick_npc(dunbar),
+        tick_npc(george),
+        tick_npc(mrs_robner),
+        tick_npc(rourke),
+        tick_npc(coates),
+        clock::queue_and_enable(npc_ai::i_follow, 1).
+
     %% Start all NPC movement schedules.
     %% ZIL: START-MOVEMENT routine
     :- public(start_movement/0).
     start_movement :-
-        clock::queue_and_enable(npc_ai::tick_gardener, 1),
-        clock::queue_and_enable(npc_ai::tick_dunbar, 1),
-        clock::queue_and_enable(npc_ai::tick_george, 1),
-        clock::queue_and_enable(npc_ai::tick_mrs_robner, 1),
-        clock::queue_and_enable(npc_ai::tick_rourke, 1).
+        %% Queue schedule advancers — each NPC's first goal fires after
+        %% an initial delay (matching ZIL's leading zero-destination entry).
+        %% The initial delay is the first entry's delay field.
+        queue_first_schedule(gardener),
+        queue_first_schedule(dunbar),
+        queue_first_schedule(george),
+        queue_first_schedule(mrs_robner),
+        queue_first_schedule(rourke),
+        %% Start per-tick movement (I-FOLLOW equivalent)
+        clock::queue_and_enable(npc_ai::i_follow, 1).
+
+    :- private(queue_first_schedule/1).
+    queue_first_schedule(NPC) :-
+        npc_schedule(NPC, [entry(Delay, Jitter, _) | _]),
+        state::assertz(global_val(npc_sched_idx(NPC), 0)),
+        ( Jitter > 0 ->
+            MaxJ is Jitter * 2,
+            random_between(0, MaxJ, Rand),
+            ActualDelay is Delay + Rand - Jitter
+        ;   ActualDelay = Delay
+        ),
+        npc_tick_event(NPC, Event),
+        clock::queue_and_enable(Event, ActualDelay).
 
     %% ---------------------------------------------------------------
-    %% INDIVIDUAL NPC MOVEMENT ROUTINES
-    %% ZIL: I-GARDENER, I-DUNBAR, I-GEORGE, I-MRS-ROBNER, I-ROURKE
+    %% SCHEDULE-BASED GOAL SETTING
+    %% ZIL: IMOVEMENT — reads schedule entry, establishes goal, re-queues
+    %% for next entry's delay. Each NPC has a schedule index tracking
+    %% their current position in their schedule list.
     %% ---------------------------------------------------------------
 
     :- public(tick_gardener/0).
-    tick_gardener :-
-        advance_schedule(gardener),
-        clock::queue_and_enable(npc_ai::tick_gardener, 1).
+    tick_gardener :- advance_schedule(gardener).
 
     :- public(tick_dunbar/0).
-    tick_dunbar :-
-        advance_schedule(dunbar),
-        clock::queue_and_enable(npc_ai::tick_dunbar, 1).
+    tick_dunbar :- advance_schedule(dunbar).
 
     :- public(tick_george/0).
-    tick_george :-
-        advance_schedule(george),
-        clock::queue_and_enable(npc_ai::tick_george, 1).
+    tick_george :- advance_schedule(george).
 
     :- public(tick_mrs_robner/0).
-    tick_mrs_robner :-
-        advance_schedule(mrs_robner),
-        clock::queue_and_enable(npc_ai::tick_mrs_robner, 1).
+    tick_mrs_robner :- advance_schedule(mrs_robner).
 
     :- public(tick_rourke/0).
-    tick_rourke :-
-        advance_schedule(rourke),
-        clock::queue_and_enable(npc_ai::tick_rourke, 1).
+    tick_rourke :- advance_schedule(rourke).
 
-    %% advance_schedule/1 - check if it's time for NPC to move to next destination
+    %% advance_schedule/1 - establish goal from current entry, then queue
+    %% the next entry using the NEXT entry's delay (ZIL: IMOVEMENT)
+    %%
+    %% Schedule semantics: entry(Delay, Jitter, Destination) means
+    %% "after Delay +/- Jitter ticks, set goal to Destination".
+    %% The initial delay is handled by queue_first_schedule.
     :- private(advance_schedule/1).
     advance_schedule(NPC) :-
-        tick_npc(NPC).
+        npc_schedule(NPC, Schedule),
+        ( state::global_val(npc_sched_idx(NPC), Idx) -> true
+        ;   Idx = 0
+        ),
+        length(Schedule, Len),
+        ( Idx < Len ->
+            nth0(Idx, Schedule, entry(_Delay, _Jitter, Destination)),
+            %% Establish goal for this entry's destination
+            establish_goal(NPC, Destination),
+            %% Advance index
+            NextIdx is Idx + 1,
+            state::retractall(global_val(npc_sched_idx(NPC), _)),
+            state::assertz(global_val(npc_sched_idx(NPC), NextIdx)),
+            %% Queue next entry using its delay
+            ( NextIdx < Len ->
+                nth0(NextIdx, Schedule, entry(NextDelay, NextJitter, _)),
+                ( NextJitter > 0 ->
+                    MaxJ is NextJitter * 2,
+                    random_between(0, MaxJ, Rand),
+                    ActualDelay is NextDelay + Rand - NextJitter
+                ;   ActualDelay = NextDelay
+                ),
+                npc_tick_event(NPC, Event),
+                clock::queue_and_enable(Event, ActualDelay)
+            ;   true  % last entry — no more to queue
+            )
+        ;   true  % schedule exhausted
+        ).
+
+    %% Map NPC to its tick event for re-queuing
+    :- private(npc_tick_event/2).
+    npc_tick_event(gardener, npc_ai::tick_gardener).
+    npc_tick_event(dunbar, npc_ai::tick_dunbar).
+    npc_tick_event(george, npc_ai::tick_george).
+    npc_tick_event(mrs_robner, npc_ai::tick_mrs_robner).
+    npc_tick_event(rourke, npc_ai::tick_rourke).
 
     %% ---------------------------------------------------------------
     %% BAXTER / COATES ARRIVAL EVENTS
