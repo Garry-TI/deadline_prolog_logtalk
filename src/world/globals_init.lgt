@@ -66,6 +66,10 @@
         state::assertz(global_val(qcontext_room, none)),
         %% Game progression flags
         state::assertz(global_val(fragment_found, false)),
+        state::assertz(global_val(fragment_felt, false)),
+        state::assertz(global_val(fragment_cleaned, false)),
+        state::assertz(global_val(china_examined, false)),
+        state::assertz(global_val(rst, 0)),
         state::assertz(global_val(safe_opened, false)),
         state::assertz(global_val(dunbar_dead, false)),
         state::assertz(global_val(baxter_arrived, false)),

@@ -1278,18 +1278,105 @@
         ; fail
         ).
 
+    %% HOLE-F (Holes in the rose garden — key evidence location)
+    %% ZIL: actions.zil lines 551-597
+    object_action(_V, hole, _IO) :-
+        state::global_val(hole_tell, false),
+        !,
+        writeln("What hole?").
+    object_action(v_ask_about, hole, _IO) :- !, fail.  % fall through to person handler
+    object_action(v_find, hole, _IO) :-
+        !,
+        ( \+ state::current_room(in_roses) ->
+            writeln("They're among the roses, or have you forgotten?")
+        ; \+ state::has_flag(hole, invisible) ->
+            writeln("They're right here!")
+        ; state::global_val(hole_shown, false), utils::prob(80) ->
+            writeln("The rose garden is vast and full of thorny roses. You might look"),
+            writeln("for the rest of the day before you find them.")
+        ;
+            writeln("The garden is rather big, even just the area you are searching now, and the"),
+            writeln("holes were small. They're not here, but are probably nearby.")
+        ).
+    object_action(V, hole, _IO) :-
+        member(V, [v_examine, v_look_inside]),
+        !,
+        writeln("There are two holes here, each about two inches by four inches. They are at"),
+        writeln("least three inches deep and the soil is compacted around them.").
+    object_action(V, hole, _IO) :-
+        member(V, [v_search_around, v_search, v_dig]),
+        !,
+        %% McNabb watches irritably if present
+        ( state::location(gardener, GRoom), state::current_room(GRoom) ->
+            writeln("Mr. McNabb watches you with ill-concealed irritation.")
+        ; true ),
+        hole_search.
+
+    :- private(hole_search/0).
+    hole_search :-
+        state::global_val(fragment_found, true),
+        !,
+        writeln("Aside from dirt, organic fertilizer, and small crawly creatures, you turn"),
+        writeln("up nothing but roses.").
+    hole_search :-
+        %% Progressive search: RST counter + probability
+        state::global_val(rst, RST),
+        RST1 is RST + 1,
+        state::set_global(rst, RST1),
+        ( ( RST1 > 2 ; utils::prob(30) ) ->
+            writeln("Ouch! You cut your finger on a sharp edge as you dig. You search carefully"),
+            writeln("in the dirt, now that you are sure something is there, and pull up a piece"),
+            writeln("of porcelain, covered with dirt and dried mud."),
+            state::clear_flag(fragment, invisible),
+            state::move_entity(fragment, player),
+            state::set_global(fragment_found, true),
+            state::set_global(fragment_felt, true)
+        ;
+            %% Progressive messages before finding fragment
+            ( RST1 =:= 1 ->
+                writeln("You are making quite a mess, but you do run across some tiny pieces of a"),
+                writeln("hard, shiny substance, which drop from your fingers and back onto the ground.")
+            ;
+                writeln("Although everything is coming up roses, you haven't found anything unusual"),
+                writeln("except for a few pieces of a hard substance which fall back to the ground.")
+            )
+        ).
+    object_action(_, hole, _IO) :-
+        writeln("There is no hole here.").
+
+    %% Also handle global_hole the same way
+    object_action(V, global_hole, IO) :- object_action(V, hole, IO).
+
     %% FRAGMENT-F (pottery fragment -- key evidence)
-    %% ZIL: actions.zil lines 617-627
-    object_action(V, fragment, _IO) :-
-        ( V = v_examine ->
+    %% ZIL: actions.zil lines 610-637
+    object_action(v_examine, fragment, _IO) :-
+        !,
+        ( state::global_val(fragment_cleaned, true) ->
+            ( state::global_val(china_examined, true) ->
+                writeln("The fragment is beautifully hand-painted, exactly like those you"),
+                writeln("saw in the kitchen.")
+            ;
+                writeln("The fragment is beautifully hand-painted.")
+            ),
+            state::set_global(fragment_flag, true)
+        ;
             writeln("The piece of porcelain is filthy, coated with dried mud. You can barely"),
             writeln("make out some design underneath the dirt.")
-        ; V = v_smell ->
-            writeln("It smells faintly of tea.")
-        ; V = v_fingerprint ->
-            writeln("It's covered with dirt and mud. You realize that there would be no good"),
-            writeln("fingerprints on this.")
-        ; fail
+        ).
+    object_action(v_fingerprint, fragment, _IO) :-
+        !,
+        writeln("It's covered with dirt and mud. You realize that there would be no good"),
+        writeln("fingerprints on it.").
+    object_action(v_brush, fragment, _IO) :-
+        !,
+        state::set_global(fragment_cleaned, true),
+        ( state::global_val(china_examined, true) ->
+            writeln("As you wipe off the piece of porcelain, you notice that it is a fragment of"),
+            writeln("some very beautiful piece, handsomely painted. The markings are identical"),
+            writeln("to those you saw on the china in the kitchen.")
+        ;
+            writeln("As you wipe off the piece of porcelain, you notice that it is a fragment of"),
+            writeln("some very beautiful piece, handsomely painted.")
         ).
 
     %% NEWSPAPER-F

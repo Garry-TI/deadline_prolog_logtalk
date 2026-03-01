@@ -331,6 +331,12 @@
     verb_command(cmd(v_smell, DO, none))     --> [smell], noun_phrase(DO).
     verb_command(cmd(v_listen, DO, none))    --> [listen], [to], noun_phrase(DO).
     verb_command(cmd(v_listen, DO, none))    --> [listen], [at], noun_phrase(DO).
+    verb_command(cmd(v_brush, DO, none))     --> [brush], noun_phrase(DO).
+    verb_command(cmd(v_brush, DO, none))     --> [clean], noun_phrase(DO).
+    verb_command(cmd(v_brush, DO, none))     --> [wipe], noun_phrase(DO).
+    verb_command(cmd(v_dig, DO, none))       --> [dig], noun_phrase(DO).
+    verb_command(cmd(v_dig, DO, none))       --> [dig], [in], noun_phrase(DO).
+    verb_command(cmd(v_dig, DO, none))       --> [dig], [around], noun_phrase(DO).
     verb_command(cmd(v_rub, DO, none))       --> [rub], noun_phrase(DO).
     verb_command(cmd(v_rub, DO, pair(with, IO))) --> [rub], noun_phrase(DO), [with], noun_phrase(IO).
     verb_command(cmd(v_rub, DO, pair(with, IO))) --> [shade], noun_phrase(DO), [with], noun_phrase(IO).
