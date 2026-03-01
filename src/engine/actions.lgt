@@ -175,6 +175,15 @@
         ( state::global_val(ladder_flag, true) ->
             writeln("The top of a ladder is resting on the metal railing.")
         ;   true
+        ),
+        %% Observation point: McNabb visible from balcony (ZIL: lines 245-251)
+        ( state::location(gardener, rose_garden) ->
+            writeln("Mr. McNabb is tending to the roses.")
+        ; state::location(gardener, north_lawn) ->
+            utils::pick_one(["picking weeds", "mowing the grass",
+                             "wiping his brow", "examining his work"], Act),
+            format("Away to the north, Mr. McNabb can be seen ~w.~n", [Act])
+        ;   true
         ).
 
     room_look(hidden_closet) :- !,
@@ -388,6 +397,18 @@
             writeln("You close the bay window.")
         ;   writeln("The bay window is already closed.")
         ).
+    %% LOOK-INSIDE bay window (ZIL: BAY-WINDOW-F lines 401-412)
+    bay_window_action(v_look_inside, bay_window, _IO) :-
+        !,
+        ( state::current_room(west_of_door) ->
+            writeln("You see the living room through the window.")
+        ; state::location(gardener, south_lawn) ->
+            utils::pick_one(["picking weeds", "mowing the grass",
+                             "wiping his brow", "examining his work"], Act),
+            format("Through the bay windows the gardener, Mr. McNabb, can be seen ~w on the south lawn.~n", [Act])
+        ;
+            writeln("You can see the south lawn.")
+        ).
     bay_window_action(_, _, _) :- true.
 
     %% Ladder: special climb behavior
@@ -538,6 +559,15 @@
         !,
         gardener_describe.
 
+    %% COM-CHECK: redirect alternate communication phrasings (ZIL: lines 4056-4074)
+    gardener_handler(v_what, _DO, _IO) :-
+        !,
+        state::current_do(PRSO),
+        gardener_ask_about(PRSO).
+    gardener_handler(v_tell_me, _DO, pair(_Prep, Topic)) :-
+        !,
+        gardener_ask_about(Topic).
+
     %% Default — fall through to verb handler
     gardener_handler(_, _, _) :- fail.
 
@@ -654,27 +684,59 @@
     :- private(gardener_describe/0).
 
     gardener_describe :-
-        state::location(gardener, Loc),
-        ( Loc = orchard ->
-            write("Mr. McNabb is here, pruning the trees.")
-        ; member(Loc, [north_lawn, east_lawn, south_lawn, west_lawn]) ->
-            utils::pick_one(["picking weeds", "mowing the grass",
-                             "wiping his brow", "examining his work"], Act),
-            format("Mr. McNabb is here, ~w.", [Act])
-        ; Loc = rose_garden ->
-            utils::pick_one(["planting seeds", "cutting fresh flowers",
-                             "pruning stems"], Act),
-            format("Mr. McNabb is here, ~w.", [Act])
+        %% IN-MOTION? check (ZIL: line 646) — suppress description if mid-transit
+        ( state::npc_goal_enabled(gardener),
+          state::npc_goal(gardener, [_|_]) ->
+            true  % in motion — suppress activity description
         ;
-            write("Mr. McNabb is here.")
-        ),
-        ( state::global_val(g_i_g, GIG), GIG \= false ->
-            writeln(" He seems quite worked up and is talking aloud"),
-            writeln("to himself.")
-        ; state::global_val(gardener_angry, true) ->
-            writeln(" He seems pretty angry about something.")
-        ;
-            nl
+            state::location(gardener, Loc),
+            ( Loc = orchard ->
+                write("Mr. McNabb is here, pruning the trees.")
+            ; member(Loc, [north_lawn, east_lawn, south_lawn, west_lawn]) ->
+                utils::pick_one(["picking weeds", "mowing the grass",
+                                 "wiping his brow", "examining his work"], Act),
+                format("Mr. McNabb is here, ~w.", [Act])
+            ; Loc = rose_garden ->
+                utils::pick_one(["planting seeds", "cutting fresh flowers",
+                                 "pruning stems"], Act),
+                format("Mr. McNabb is here, ~w.", [Act])
+            ;
+                write("Mr. McNabb is here.")
+            ),
+            ( state::global_val(g_i_g, GIG), GIG \= false ->
+                writeln(" He seems quite worked up and is talking aloud"),
+                writeln("to himself.")
+            ; state::global_val(gardener_angry, true) ->
+                writeln(" He seems pretty angry about something.")
+            ;
+                nl
+            ),
+            %% CARRY-CHECK (ZIL: line 665) — show items McNabb is carrying
+            carry_check(gardener)
+        ).
+
+    %% --- CARRY-CHECK (ZIL: lines 3301-3304) ---
+    %% Prints items an NPC is carrying (visible to the player)
+    :- private(carry_check/1).
+    carry_check(NPC) :-
+        findall(Obj, (state::location(Obj, NPC), Obj \= player), Items),
+        ( Items = [] -> true
+        ;   NPC_Desc = NPC,
+            ( NPC = gardener -> Name = "Mr. McNabb"
+            ; NPC = baxter -> Name = "Mr. Baxter"
+            ; NPC = george -> Name = "George"
+            ; NPC = mrs_robner -> Name = "Mrs. Robner"
+            ; NPC = dunbar -> Name = "Ms. Dunbar"
+            ; NPC = rourke -> Name = "Mrs. Rourke"
+            ; NPC = coates -> Name = "Mr. Coates"
+            ; NPC = duffy -> Name = "Sgt. Duffy"
+            ; atom_string(NPC_Desc, Name)
+            ),
+            format("~w is carrying:~n", [Name]),
+            forall(member(Obj, Items),
+                ( ( Obj::desc(Desc) -> true ; atom_string(Obj, Desc) ),
+                  format("  ~w~n", [Desc])
+                ))
         ).
 
     %% --- SHOW-HOLE (ZIL: actions.zil lines 543-549) ---

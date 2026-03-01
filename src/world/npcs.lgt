@@ -93,6 +93,8 @@
     dialogue_response(focus, "Baxter clears his throat. \"I don't know what you're talking about.\"").
     dialogue_response(papers, "He looks away. \"Those are confidential business documents.\"").
     dialogue_response(robner, "\"Marshall was my client for twenty years,\" he says.").
+    dialogue_response(gardener, "\"I don't know much about Mr. McNabb.\"").
+    dialogue_response(rourke, "\"I don't know much about Mrs. Rourke.\"").
 
     greet_response :-
         writeln("\"Good morning, Inspector,\" says Mr. Baxter, adjusting his tie.").
@@ -129,6 +131,7 @@
     dialogue_response(letter, "She turns red. \"That's personal correspondence.\"").
     dialogue_response(robner, "\"Mr. Robner was a wonderful employer.\" She sniffles.").
     dialogue_response(meeting, "She hesitates. \"I - I was here all morning.\"").
+    dialogue_response(gardener, "\"He seems nice, if you can talk to him. You usually can't, really.\" She laughs briefly. \"Don't ever disturb his roses, or you'll learn the meaning of temper.\" She giggles again.").
 
     greet_response :-
         writeln("Ms. Dunbar looks up at you with red-rimmed eyes.").
@@ -163,6 +166,7 @@
     dialogue_response(will, "His jaw tightens. \"Dad was going to cut me out. I know that.\"").
     dialogue_response(robner, "\"My father and I didn't see eye to eye on things.\"").
     dialogue_response(meeting, "He looks away. \"I didn't see him this morning.\"").
+    dialogue_response(gardener, "\"McNabb, that old bore? Always talking about the damn roses and weeds. Don't ask him about them, unless you have all day.\"").
 
     greet_response :-
         writeln("George looks up from where he's sitting. He appears pale and shaken.").
@@ -200,6 +204,7 @@
     dialogue_response(letter, "She flushes slightly. \"That was from my friend Steven.\"").
     dialogue_response(steven, "\"Steven is an old friend. We correspond regularly.\"").
     dialogue_response(baxter, "Her eyes cloud. \"Mr. Baxter handled Marshall's legal affairs.\"").
+    dialogue_response(gardener, "\"I don't pay much attention to him. He's worked out well; the grounds are in excellent condition. You must take a look at his roses while you're here. They're really spectacular.\"").
 
     greet_response :-
         writeln("Mrs. Robner acknowledges you with a brief nod. She is clearly distraught.").
@@ -236,6 +241,7 @@
     dialogue_response(sugar, "\"I always put sugar on the tray. Mr. Robner liked his tea sweet.\"").
     dialogue_response(robner, "\"He seemed perfectly well last night at dinner.\"").
     dialogue_response(baxter, "\"Mr. Baxter comes every week. A perfectly nice man.\"").
+    dialogue_response(gardener, "\"Oh, don't let him frighten you. Let him alone and don't bother his roses. Gets positively livid about that. Got the green thumb, that's for sure.\"").
 
     greet_response :-
         writeln("\"Good morning,\" Mrs. Rourke says briskly, continuing her work.").
