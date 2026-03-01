@@ -67,7 +67,8 @@
     pick_one(List, Element) :-
         length(List, Len),
         Len > 0,
-        random_between(0, Len-1, Idx),
+        MaxIdx is Len - 1,
+        random_between(0, MaxIdx, Idx),
         nth0(Idx, List, Element).
 
     %% random_range(+Min, +Max, -Value) - random integer in [Min, Max]

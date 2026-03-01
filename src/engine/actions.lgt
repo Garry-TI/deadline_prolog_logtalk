@@ -242,9 +242,11 @@
     %% ---------------------------------------------------------------
 
     %% in_roses action: gardener anger when player enters rose garden
+    %% ZIL: IN-ROSES-F (actions.zil lines 80-100)
     :- public(in_roses_action/4).
     in_roses_action(m_enter, v_walk, _DO, _IO) :-
         state::global_val(gardener_angry, false),
+        state::global_val(gardener_show, false),
         state::location(gardener, GardenerLoc),
         member(GardenerLoc, [rose_garden, north_lawn, west_lawn]),
         !,
@@ -253,10 +255,18 @@
         writeln("edge of the garden, can be seen the person of Mr. Angus McNabb, the gardener."),
         writeln("He advances, looking crazed and gesticulating wildly. With each carefully"),
         writeln("chosen step in your direction, a barely visible wince of pain comes to his"),
-        writeln("deeply-lined face."),
+        writeln("deeply-lined face. He regards you as you would regard the man whose car"),
+        writeln("just ran over your little puppy dog."),
+        %% Extra text if G-I-G already triggered
+        ( state::global_val(g_i_g, GIG), GIG \= false ->
+            writeln("\"I canna believe it! I've already spent"),
+            writeln("an hour fixing up the ground here where some fool was walkin' aboot--and"),
+            writeln("now you! I canna believe it!\"")
+        ; true ),
         state::set_global(gardener_angry, true),
-        state::move_entity(gardener, in_roses),
-        clock::queue_and_enable(actions::i_gardener_calm, 90).
+        state::set_global(gardener_no_reply, true),
+        clock::queue_and_enable(actions::i_gardener_calm, 90),
+        state::move_entity(gardener, in_roses).
     in_roses_action(_, _, _, _) :- true.
 
     %% foyer action: Mrs. Robner welcome on first enter
@@ -466,26 +476,215 @@
     %% NPC ACTION HANDLERS
     %% ---------------------------------------------------------------
 
-    %% Gardener: angry if player enters rose garden
-    :- public(gardener_action/3).
-    gardener_action(v_ask_about, gardener, pair(about, _Topic)) :-
-        state::global_val(gardener_angry, true),
+    %% ---------------------------------------------------------------
+    %% GARDENER-F (ZIL: actions.zil lines 644-766)
+    %% Mr. McNabb action handler — dispatch by verb
+    %% ---------------------------------------------------------------
+
+    %% Gardener as DO (ask, hello, goodbye, listen, examine)
+    object_action(V, gardener, IO) :- gardener_handler(V, gardener, IO).
+    object_action(V, global_gardener, IO) :- gardener_handler(V, gardener, IO).
+
+    %% Gardener as IO (show X to gardener)
+    object_action(V, pair(to, gardener), DO) :- gardener_show_handler(V, DO).
+    object_action(V, pair(to, global_gardener), DO) :- gardener_show_handler(V, DO).
+
+    :- private(gardener_handler/3).
+
+    %% HELLO / GOODBYE (ZIL: lines 666-676)
+    gardener_handler(V, _DO, _IO) :-
+        member(V, [v_hello, v_goodbye]),
         !,
-        writeln("\"Get awa' from my roses! I'll no' speak to you while you're here!\"").
-    gardener_action(v_ask_about, gardener, pair(about, Topic)) :-
-        !,
-        ( catch(gardener::dialogue_response(Topic, Response), _, Response = none) ->
-            ( Response = none ->
-                writeln("Mr. McNabb grumbles but says nothing useful.")
-            ;   writeln(Response)
-            )
-        ;   writeln("Mr. McNabb grumbles but says nothing useful.")
+        ( state::global_val(gardener_angry, true) ->
+            writeln("McNabb grunts briefly in your direction.")
+        ; state::global_val(g_i_g, GIG), GIG \= false ->
+            writeln("He answers absently and starts to mumble quietly about the roses.")
+        ;
+            utils::pick_one(["rose garden", "fruit trees", "weather",
+                             "snootiness of city slickers",
+                             "intricacies of weeding"], Mumble),
+            format("He replies with a brief nod, and then starts mumbling to himself~nabout the ~w.~n", [Mumble])
         ).
-    gardener_action(v_give, gardener, pair(to, _)) :-
+
+    %% LISTEN (ZIL: lines 704-714)
+    gardener_handler(v_listen, _DO, _IO) :-
+        !,
+        ( state::global_val(g_i_g, GIG), GIG \= false ->
+            writeln("You can't make out everything, but he seems to be complaining about weeks"),
+            writeln("of work on the roses ruined by someone stomping around in the garden. There"),
+            writeln("are references to elephants and holes. When he's worked up, as now, he"),
+            writeln("doesn't always make much sense."),
+            state::set_global(hole_tell, true)
+        ;
+            utils::pick_one(["rose garden", "fruit trees", "weather",
+                             "snootiness of city slickers",
+                             "intricacies of weeding"], Mumble),
+            format("He seems to be mumbling about the ~w.~n", [Mumble])
+        ).
+
+    %% ASK-ABOUT (ZIL: lines 715-766)
+    gardener_handler(v_ask_about, _DO, pair(about, Topic)) :-
+        !,
+        gardener_ask_about(Topic).
+
+    %% GIVE when angry
+    gardener_handler(v_give, _DO, pair(to, _)) :-
         state::global_val(gardener_angry, true),
         !,
         writeln("\"Take that away! I'll no' have any truck with ya!\"").
-    gardener_action(_, _, _) :- true.
+
+    %% EXAMINE (M-OBJDESC — ZIL: lines 645-665)
+    gardener_handler(v_examine, _DO, _IO) :-
+        !,
+        gardener_describe.
+
+    %% Default — fall through to verb handler
+    gardener_handler(_, _, _) :- fail.
+
+    %% --- ASK-ABOUT topic dispatch (ZIL: lines 716-766) ---
+    :- private(gardener_ask_about/1).
+
+    %% If angry and not in show-hole mode, refuse to talk
+    gardener_ask_about(_Topic) :-
+        state::global_val(gardener_no_reply, true),
+        state::global_val(gardener_show, false),
+        !,
+        writeln("\"I dinna give a hoot about you or your questions! Now, begone! Steppin' all"),
+        writeln("o'er me roses. A crime, it is! I'll call the police is what!\" He seems pretty"),
+        writeln("angry.").
+
+    %% Ask about holes (after hole_tell is set)
+    gardener_ask_about(Topic) :-
+        member(Topic, [global_hole, hole]),
+        state::global_val(hole_tell, true),
+        !,
+        writeln("\"I've already told you. There's holes in my garden!\"").
+
+    %% Ask about weather (only when not upset about roses)
+    gardener_ask_about(Topic) :-
+        member(Topic, [global_weather, weather]),
+        state::global_val(g_i_g, false),
+        !,
+        writeln("\"Beautiful! What a fine day. Except for the rain Wednesday night, I ha'ent"),
+        writeln("had such a fine week in a long spell. Not that I'm complainin'. You see, with"),
+        writeln("my roses...\" He goes on and on about his roses.").
+
+    %% Ask about ladder
+    gardener_ask_about(Topic) :-
+        member(Topic, [global_ladder, ladder]),
+        !,
+        writeln("\"What aboot it? I use it for cleanin' the gutters 'n prunin' the"),
+        writeln("trees.\"").
+
+    %% Ask about roses (ZIL lines 733-744)
+    gardener_ask_about(Topic) :-
+        member(Topic, [global_roses, roses, rose, global_weather]),
+        !,
+        ( state::global_val(g_i_g, GIG), GIG \= false ->
+            writeln("He tells you his story. He was tending to the roses this morning when he"),
+            writeln("noticed two deep holes in the garden, with a few roses crushed nearby. He"),
+            writeln("doesn't know when he'll be able to repair the damage."),
+            state::set_global(hole_tell, true)
+        ;
+            writeln("McNabb goes on for some time about the exquisite nature of the garden in"),
+            writeln("general and mentions, for your benefit, some of the finer points of his"),
+            writeln("gardening technique.")
+        ).
+
+    %% Ask about lawn
+    gardener_ask_about(lawn) :-
+        !,
+        writeln("McNabb tells a long tale of woe and hardship, of days and nights"),
+        writeln("sweating with the lawn mower, roller, and weed puller.").
+
+    %% Ask about other people in the house
+    gardener_ask_about(Topic) :-
+        member(Topic, [george, global_george, baxter, global_baxter,
+                       dunbar, global_dunbar, mrs_robner, global_mrs_robner,
+                       rourke, global_rourke]),
+        !,
+        writeln("\"I don't care much aboot any of them from in the house. I barely even know"),
+        writeln("which is which.\" He shakes his head and continues with his work.").
+
+    %% Ask about Mr. Robner (deceased)
+    gardener_ask_about(Topic) :-
+        member(Topic, [global_mr_robner, mr_robner]),
+        !,
+        writeln("\"Too bad aboot Mr. Robner. He was a good man, liked to talk aboot the"),
+        writeln("garden. He told me 'McNabb', he says, 'this here's the finest garden I've"),
+        writeln("seen.' We'd talk for hours about planting and gardening. None of the others"),
+        writeln("knows between a rose and a sunflower.\" He shakes his head sadly and"),
+        writeln("continues his work.").
+
+    %% Default response
+    gardener_ask_about(_) :-
+        writeln("\"I dinna know nothin' aboot that.\"").
+
+    %% --- SHOW handler (ZIL: lines 678-700) ---
+    %% "show hole to mcnabb" or "show roses to mcnabb"
+    :- private(gardener_show_handler/2).
+
+    gardener_show_handler(V, DO) :-
+        member(V, [v_show, v_sshow]),
+        member(DO, [global_hole, hole, global_roses, roses, rose]),
+        !,
+        ( state::global_val(hole_tell, false),
+          state::global_val(g_i_g, false) ->
+            writeln("\"I don't know what you're-a talkin' aboot.\"")
+        ; state::global_val(no_show, true) ->
+            writeln("\"I don't think I remember where it was. Now go away,\" he says. He looks a"),
+            writeln("bit annoyed at you, probably for asking him before and then running off.")
+        ; state::global_val(hole_shown, true) ->
+            writeln("\"I've already shown you plenty. Now, git!\"")
+        ; state::current_room(in_roses) ->
+            state::set_global(gardener_show, true),
+            state::set_global(hole_tell, true),
+            show_hole
+        ;
+            npc_ai::establish_goal(gardener, in_roses),
+            state::set_global(gardener_show, true),
+            state::set_global(hole_tell, true),
+            writeln("\"Follow me!\" he says, and starts walking toward the roses.")
+        ).
+
+    %% Other show actions — fall through
+    gardener_show_handler(_, _) :- fail.
+
+    %% --- GARDENER-DESCRIBE (M-OBJDESC — ZIL lines 645-665) ---
+    :- private(gardener_describe/0).
+
+    gardener_describe :-
+        state::location(gardener, Loc),
+        ( Loc = orchard ->
+            write("Mr. McNabb is here, pruning the trees.")
+        ; member(Loc, [north_lawn, east_lawn, south_lawn, west_lawn]) ->
+            utils::pick_one(["picking weeds", "mowing the grass",
+                             "wiping his brow", "examining his work"], Act),
+            format("Mr. McNabb is here, ~w.", [Act])
+        ; Loc = rose_garden ->
+            utils::pick_one(["planting seeds", "cutting fresh flowers",
+                             "pruning stems"], Act),
+            format("Mr. McNabb is here, ~w.", [Act])
+        ;
+            write("Mr. McNabb is here.")
+        ),
+        ( state::global_val(g_i_g, GIG), GIG \= false ->
+            writeln(" He seems quite worked up and is talking aloud"),
+            writeln("to himself.")
+        ; state::global_val(gardener_angry, true) ->
+            writeln(" He seems pretty angry about something.")
+        ;
+            nl
+        ).
+
+    %% --- SHOW-HOLE (ZIL: actions.zil lines 543-549) ---
+    :- public(show_hole/0).
+    show_hole :-
+        writeln("McNabb grabs your arm and leads you to a spot deep within the garden and"),
+        writeln("near the house. You might never have found this place alone. He points at"),
+        writeln("the ground, where you see two holes in the soft earth."),
+        state::clear_flag(hole, invisible),
+        state::set_global(hole_shown, true).
 
     %% Dunbar: key witness
     :- public(dunbar_action/3).
@@ -736,17 +935,48 @@
         state::set_global(call_move, true),
         clock::queue_and_enable(events::i_call, 1).
 
-    %% Gardener calms down (GARDENER-NO-REPLY cleared)
+    %% Gardener calms down (ZIL: I-GARDENER-CALM clears GARDENER-NO-REPLY)
     :- public(i_gardener_calm/0).
     i_gardener_calm :-
-        state::set_global(gardener_angry, false).
+        state::set_global(gardener_no_reply, false).
 
-    %% Show hole in rose garden (I-SHOW-HOLE event)
+    %% I-SHOW-HOLE (ZIL: actions.zil lines 3735-3745)
+    %% McNabb waits in the roses for the player. If they take too long,
+    %% he gives up (NO-SHOW). If they arrive, he shows the hole.
     :- public(i_show_hole/0).
     i_show_hole :-
-        state::clear_flag(hole, invisible),
-        state::current_room(in_roses),
-        writeln("You notice disturbed earth -- there appear to be holes in the soft dirt.").
+        state::global_val(show_wait, SW),
+        SW1 is SW + 1,
+        state::set_global(show_wait, SW1),
+        ( SW1 > 4 ->
+            %% Player took too long — McNabb gives up
+            state::set_global(no_show, true)
+        ; state::current_room(in_roses) ->
+            %% Player arrived
+            ( SW1 > 1 ->
+                writeln("McNabb gives you a sideways glance. \"What kept you?\" he asks.")
+            ; true ),
+            show_hole
+        ;
+            %% Player hasn't arrived yet — re-queue
+            clock::queue_and_enable(actions::i_show_hole, 1)
+        ).
+
+    %% I-G-I-G (ZIL: goal.zil lines 494-503)
+    %% McNabb spontaneously starts complaining about his roses.
+    :- public(i_g_i_g/0).
+    i_g_i_g :-
+        state::global_val(present_time, PT),
+        state::set_global(g_i_g, PT),
+        ( state::current_room(rose_garden),
+          state::global_val(hole_shown, false) ->
+            state::set_global(hole_tell, true),
+            writeln("All of a sudden, Mr. McNabb starts talking to himself quite"),
+            writeln("loudly about his poor roses being ruined. He walks up to you and"),
+            writeln("says \"You canna believe the holes someone's made. Crushed my"),
+            writeln("roses. It'll take me plenty a time to set it right. I just"),
+            writeln("canna believe it!\" He shakes his head dejectedly.")
+        ; true ).
 
     %% Baxter arrives
     :- public(i_baxter_arrive/0).

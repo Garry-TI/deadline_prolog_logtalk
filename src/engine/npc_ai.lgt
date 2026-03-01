@@ -18,7 +18,7 @@
         comment is 'NPC movement AI: transit lines, goal pursuit, scheduled movement.'
     ]).
 
-    :- uses(user, [nth0/3, append/3, member/2, numlist/3, reverse/2]).
+    :- uses(user, [nth0/3, append/3, member/2, numlist/3, reverse/2, random_between/3]).
 
     %% ---------------------------------------------------------------
     %% TRANSIT LINES
@@ -222,7 +222,53 @@
         ).
 
     :- private(goal_reached/1).
-    goal_reached(_NPC) :- true.  % NPCs handle their own arrival events
+
+    %% Gardener reached destination (ZIL: I-GARDENER G-REACHED, goal.zil lines 507-543)
+    goal_reached(gardener) :-
+        !,
+        state::location(gardener, Loc),
+        ( Loc = rose_garden ->
+            %% Queue I-G-I-G event (2 + random 1-10 ticks)
+            random_between(3, 12, Delay),
+            clock::queue_and_enable(actions::i_g_i_g, Delay)
+        ; Loc = orchard ->
+            %% Reclaim ladder if not in orchard
+            ( \+ state::location(ladder, orchard) ->
+                %% Move ladder to orchard
+                ( state::location(ladder, player) ->
+                    state::move_entity(ladder, orchard),
+                    writeln("McNabb comes over to you and takes the ladder. He walks off"),
+                    writeln("toward the orchard.")
+                ; state::current_room(PlayerRoom),
+                  state::location(ladder, PlayerRoom) ->
+                    state::move_entity(ladder, orchard),
+                    writeln("McNabb picks up the ladder and walks away toward the orchard.")
+                ; state::current_room(orchard) ->
+                    state::move_entity(ladder, orchard),
+                    writeln("McNabb places the ladder he was carrying on the ground.")
+                ;
+                    state::move_entity(ladder, orchard)
+                ),
+                state::clear_flag(ladder, ndescbit),
+                state::set_global(ladder_flag, false),
+                state::set_global(ladder_flag_2, false),
+                state::set_flag(ladder, touchbit)
+            ; true )
+        ; Loc = in_roses ->
+            %% McNabb arrived at in_roses to show holes
+            ( state::current_room(in_roses) ->
+                %% Player is here — show the hole immediately
+                actions::show_hole
+            ;
+                %% Player hasn't followed yet — queue I-SHOW-HOLE
+                clock::queue_and_enable(actions::i_show_hole, 1)
+            )
+        ;
+            true
+        ).
+
+    %% Other NPCs — no special arrival behavior
+    goal_reached(_NPC) :- true.
 
     %% ---------------------------------------------------------------
     %% MOVE NPC

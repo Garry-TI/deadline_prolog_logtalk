@@ -52,8 +52,15 @@
         %% Ladder flags (controls balcony access)
         state::assertz(global_val(ladder_flag, false)),
         state::assertz(global_val(ladder_flag_2, false)),
-        %% Gardener state
+        %% Gardener state (ZIL: GARDENER-ANGRY, GARDENER-NO-REPLY, G-I-G, etc.)
         state::assertz(global_val(gardener_angry, false)),
+        state::assertz(global_val(gardener_no_reply, false)),
+        state::assertz(global_val(g_i_g, false)),
+        state::assertz(global_val(hole_tell, false)),
+        state::assertz(global_val(hole_shown, false)),
+        state::assertz(global_val(no_show, false)),
+        state::assertz(global_val(gardener_show, false)),
+        state::assertz(global_val(show_wait, 0)),
         %% Dialogue context
         state::assertz(global_val(qcontext, none)),
         state::assertz(global_val(qcontext_room, none)),
