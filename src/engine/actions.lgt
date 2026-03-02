@@ -1949,9 +1949,9 @@
     %% results. Only one analysis at a time.
     %% ---------------------------------------------------------------
 
-    :- public(do_fingerprint/2).
+    :- public(do_fingerprint/3).
     :- uses(user, [random_between/3]).
-    do_fingerprint(Obj, IsAnalysis) :-
+    do_fingerprint(Obj, IsAnalysis, AnalysisGoal) :-
         %% Already busy?
         ( state::global_val(fingerprint_obj, Cur), Cur \= none ->
             writeln("Sergeant Duffy is already at the lab running a previous errand."),
@@ -1967,8 +1967,14 @@
             %% Set analysis globals
             state::set_global(fingerprint_obj, Obj),
             ( IsAnalysis = true ->
-                state::set_global(analysis_obj, true)
-            ;   state::set_global(analysis_obj, false)
+                state::set_global(analysis_obj, true),
+                %% Set analysis goal (what to analyze FOR)
+                ( AnalysisGoal \= none ->
+                    state::set_global(analysis_goal, AnalysisGoal)
+                ;   state::set_global(analysis_goal, none)
+                )
+            ;   state::set_global(analysis_obj, false),
+                state::set_global(analysis_goal, none)
             ),
             %% Ladder special case: lab closes at noon
             ( Obj = ladder ->

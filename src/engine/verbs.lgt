@@ -123,7 +123,7 @@
     %% INVESTIGATE / ANALYZE
     %% ---------------------------------------------------------------
 
-    verb_handler(v_analyze, DO, _)         :- v_analyze(DO).
+    verb_handler(v_analyze, DO, IO)         :- v_analyze(DO, IO).
     verb_handler(v_fingerprint, DO, _)     :- v_fingerprint(DO).
     verb_handler(v_what, DO, _)            :- v_what(DO).
     verb_handler(v_know, DO, _)            :- v_what(DO).
@@ -705,17 +705,22 @@
     %% If IO is fingerprints, redirect to fingerprint verb.
     %% If object is takeable, call DO-ANALYZE (analysis mode).
     %% Otherwise Duffy can't analyze it.
-    :- public(v_analyze/1).
-    v_analyze(none) :- writeln("Analyze what?").
-    v_analyze(DO) :-
+    :- public(v_analyze/2).
+    v_analyze(none, _) :- writeln("Analyze what?").
+    v_analyze(DO, IO) :-
         ( DO = global_fingerprints ->
             %% "analyze fingerprints" → need to specify what
             writeln("You must specify what to analyze.")
         ; state::global_val(fingerprint_obj, Cur), Cur \= none ->
             writeln("Duffy is already occupied with another errand.")
         ; state::has_flag(DO, takebit) ->
+            %% Extract goal from IO: pair(for, loblo) → loblo; none → none
+            ( IO = pair(for, Goal) -> AnalysisGoal = Goal
+            ; IO = pair(_, Goal) -> AnalysisGoal = Goal
+            ; AnalysisGoal = none
+            ),
             %% Takeable object → Duffy takes it to the lab (analysis mode)
-            actions::do_fingerprint(DO, true)
+            actions::do_fingerprint(DO, true, AnalysisGoal)
         ; state::location(DO, global_objects) ->
             ( catch(DO::desc(D), _, D = DO) -> true ; D = DO ),
             format("Duffy appears in an instant. \"Well, I might be able to analyze the ~w,~n", [D]),
@@ -730,7 +735,7 @@
     :- public(v_fingerprint/1).
     v_fingerprint(none) :- writeln("Fingerprint what?").
     v_fingerprint(DO) :-
-        actions::do_fingerprint(DO, false).
+        actions::do_fingerprint(DO, false, none).
 
     %% ---------------------------------------------------------------
     %% ACCUSE / ARREST / CONFRONT
