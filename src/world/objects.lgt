@@ -787,6 +787,16 @@ sufficient to convict Mr. Baxter in the Focus case.").
 estate to his wife.").
 :- end_object.
 
+:- object(soggy_will, extends(entity), imports([takeable, readable])).
+    :- info([comment is 'Wet destroyed will - found in lake after George discards it']).
+    desc("wet piece of paper").
+    synonym([piece, paper]).
+    adjective([paper, wet, drenched, soggy]).
+    initial_flags([takebit, readbit]).
+    read_text("The paper was once some sort of document. It is now smeared and \
+completely unreadable.").
+:- end_object.
+
 :- object(newspaper, extends(entity), imports([takeable, readable])).
     :- info([comment is 'Daily Herald newspaper - arrives at tick 175']).
     fdesc("Leaning against the front door is today's issue of the Daily Herald.").

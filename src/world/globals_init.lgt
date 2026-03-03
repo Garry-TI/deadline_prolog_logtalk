@@ -74,6 +74,14 @@
         state::assertz(global_val(dunbar_dead, false)),
         state::assertz(global_val(baxter_arrived, false)),
         state::assertz(global_val(coates_arrived, false)),
+        %% Will reading event (ZIL: I-WILL-READING state machine)
+        state::assertz(global_val(will_time, 0)),
+        state::assertz(global_val(will_wait, 0)),
+        state::assertz(global_val(will_hold, false)),
+        state::assertz(global_val(at_reading, false)),
+        state::assertz(global_val(post_will, false)),
+        state::assertz(global_val(george_sequence, false)),
+        state::assertz(global_val(george_run, 0)),
         %% Calendar page (ZIL: CALENDAR-PAGE, default July 7)
         state::assertz(global_val(calendar_page, 7)),
         %% George calendar flag (ZIL: G-CALENDAR)
