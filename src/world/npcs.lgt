@@ -270,8 +270,13 @@
     character_index(7).
     %% No initial location - placed by clock event
 
-    %% Coates dialogue responses
-    dialogue_response(will, "\"I handle the Robner estate accounts,\" he says carefully.").
+    %% Coates dialogue responses (ZIL: COATES-F lines 3884-3892)
+    %% Will and legal topics: attorney-client privilege
+    dialogue_response(global_old_will, "\"I am not at liberty to discuss Mr. Robner's legal matters. That is privileged information between attorney and client.\"").
+    dialogue_response(global_new_will, "\"I am not at liberty to discuss Mr. Robner's legal matters. That is privileged information between attorney and client.\"").
+    dialogue_response(will, "\"I am not at liberty to discuss Mr. Robner's legal matters. That is privileged information between attorney and client.\"").
+    dialogue_response(focus, "\"I am not at liberty to discuss Mr. Robner's legal matters. That is privileged information between attorney and client.\"").
+    dialogue_response(omnidyne, "\"I am not at liberty to discuss Mr. Robner's legal matters. That is privileged information between attorney and client.\"").
     dialogue_response(robner, "\"Marshall was a valued client.\"").
     dialogue_response(baxter, "A slight pause. \"Baxter handles the corporate matters.\"").
 
