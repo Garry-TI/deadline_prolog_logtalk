@@ -852,15 +852,83 @@
         ;
             writeln("You don't have enough evidence to arrest George.").
 
-    %% ASK-ABOUT (ZIL: lines 1207-1215)
+    %% ASK-ABOUT (ZIL: lines 1248-1345)
     george_handler(v_ask_about, _DO, pair(about, Topic)) :-
         !,
-        ( catch(george::dialogue_response(Topic, Response), _, Response = none) ->
+        ( george_ask_about(Topic) -> true
+        ; catch(george::dialogue_response(Topic, Response), _, Response = none) ->
             ( Response = none ->
                 writeln("George shrugs. \"I don't know what you mean.\"")
             ;   writeln(Response)
             )
         ;   writeln("George shrugs. \"I don't know what you mean.\"")
+        ).
+
+    %% Context-sensitive ASK-ABOUT topics (require checking globals)
+    :- private(george_ask_about/1).
+
+    %% Hidden closet (ZIL: lines 1250-1258)
+    george_ask_about(global_hidden_closet) :-
+        ( state::global_val(safe_seen, true) ; state::global_val(new_will_seen, true) ) ->
+            writeln("\"What of it? Dad's safe is there. I don't think anyone knows about it"),
+            writeln("except Dad and me.\"")
+        ;
+            writeln("\"Hidden closet, you say? Hmm. I think I'd know if there was one, but there"),
+            writeln("isn't!\"").
+    george_ask_about(hidden_closet) :- george_ask_about(global_hidden_closet).
+
+    %% Safe (ZIL: lines 1293-1314)
+    george_ask_about(global_safe) :-
+        ( state::global_val(new_will_seen, true) ->
+            writeln("\"Let's not go into it, ok? You caught me looking for the will. Well, what of"),
+            writeln("it? I didn't kill Dad, if that's what you're thinking. Leave me alone!\"")
+        ; state::global_val(safe_seen, true) ->
+            writeln("\"You mean my father's safe? Yeah, if he brings important papers home he puts"),
+            writeln("them in there. He keeps most important stuff at the office at the bank. You"),
+            writeln("really startled me in there. I thought I might be able to get it open. Dad"),
+            writeln("always acted like it was a big secret, something out of a spy story. Anyway,"),
+            writeln("it turns out I don't remember the combination. It was a long time ago.\"")
+        ; state::global_val(george_sequence, true) ->
+            writeln("George turns toward you with rage in his eyes. \"I don't know anything about"),
+            writeln("any damn safe! Now leave me alone or I'll have you kicked out of here!\" He"),
+            writeln("turns away.")
+        ;
+            writeln("George looks briefly toward the ceiling, as if recalling something. \"Oh, I'm"),
+            writeln("sorry. A safe? No, I don't know about any safe...except at the office, that"),
+            writeln("is. I think there's one there.\"")
+        ).
+    george_ask_about(safe) :- george_ask_about(global_safe).
+
+    %% Steven — response depends on g_letter flag (ZIL: lines 1264-1275)
+    george_ask_about(global_steven) :-
+        ( state::global_val(g_letter, true) ->
+            writeln("\"He's a little worm who's been coming by lately. He's one of those fancy"),
+            writeln("ski-instructor types, if you know what I mean. From what I've seen, it"),
+            writeln("wouldn't surprise me if he and Mom are having an affair.\"")
+        ;
+            writeln("\"Steven? Oh, you must mean the guy who comes around for Mom now and"),
+            writeln("then. I don't know much about him. Dresses a bit above himself, I'll say"),
+            writeln("that much.\"")
+        ).
+
+    %% New will — complex response (ZIL: lines 1327-1345)
+    george_ask_about(Topic) :-
+        member(Topic, [new_will, global_new_will]),
+        ( state::global_val(will_time, WT), WT > 0 ->
+            ( state::has_flag(new_will, touchbit) ->
+                writeln("\"You should know what it says.\"")
+            ; state::global_val(new_will_seen, true) ->
+                writeln("\"I don't know what you're talking about. There's no new will. Dad never"),
+                writeln("wrote one! He would just threaten me when I asked for spending money.\"")
+            ; state::global_val(george_sequence, true) ->
+                writeln("\"Look. I know the same as you. There's no new will. I'm sure of it. Dad"),
+                writeln("wouldn't do that.\"")
+            ;
+                writeln("\"I've heard about it but I've never seen one. It wouldn't surprise me,"),
+                writeln("though. Dad liked to change his mind about things.\"")
+            )
+        ;
+            writeln("\"New will? What new will? I don't know what you're talking about.\"")
         ).
 
     %% Default: not handled (fall through to verb handler)
