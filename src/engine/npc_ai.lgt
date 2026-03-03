@@ -267,6 +267,34 @@
             true
         ).
 
+    %% Coates reached destination (ZIL: I-COATES G-REACHED, goal.zil lines 711-729)
+    goal_reached(coates) :-
+        !,
+        state::location(coates, Loc),
+        ( Loc = south_lawn ->
+            %% Post-will departure: Coates leaves in his car
+            state::retractall(location(coates, _)),
+            state::set_global(post_will, false),
+            state::current_room(Here),
+            ( member(Here, [south_lawn, front_path, east_of_door,
+                            west_of_door, east_lawn, west_lawn]) ->
+                writeln("A car pulls up the drive. Coates enters the vehicle, motions"),
+                writeln("to the driver, and the car starts up and leaves the grounds.")
+            ;   true
+            )
+        ; Loc = living_room ->
+            %% Coates arrived for the will reading
+            ( state::current_room(living_room) ->
+                writeln("Mr. Coates shakes your hand. \"I'm glad you're here, Inspector."),
+                writeln("We'll begin the reading soon.\"")
+            ;   true
+            ),
+            %% Trigger the will reading event
+            clock::queue_and_enable(actions::i_will_reading, 0),
+            actions::i_will_reading
+        ;   true
+        ).
+
     %% Other NPCs — no special arrival behavior
     goal_reached(_NPC) :- true.
 
@@ -494,31 +522,23 @@
     :- public(i_coates_arrive/0).
     i_coates_arrive :-
         state::set_global(coates_arrived, true),
-        state::assertz(location(coates, front_path)),
+        state::assertz(location(coates, south_lawn)),
+        establish_goal(coates, living_room),
         state::current_room(Here),
-        ( Here = foyer ; Here = front_path ->
-            writeln("A police car pulls up outside.")
+        ( Here = south_lawn ->
+            writeln("A large automobile pulls up the drive. Mr. Coates, the lawyer, steps out of"),
+            writeln("the car. \"Oh, hello! You must be the Inspector. I'll be reading the will at"),
+            writeln("noon, you know. Don't be late!\" he says.")
+        ; member(Here, [front_path, east_lawn, west_lawn, east_of_door, west_of_door]) ->
+            writeln("A car pulls up the drive to the south, and Mr. Coates steps out onto"),
+            writeln("the lawn.")
         ;   true
-        ),
-        establish_goal(coates, living_room).
+        ).
 
     %% ---------------------------------------------------------------
-    %% ATTENTION / FOLLOW SYSTEM
-    %% ZIL: I-FOLLOW, I-ATTENTION - NPCs notice the player nearby
+    %% ATTENTION / REACTION SYSTEM
+    %% ZIL: I-ATTENTION - NPCs notice the player nearby
     %% ---------------------------------------------------------------
-
-    :- public(i_follow/0).
-    i_follow :-
-        %% Check if any NPC wants to follow or block the player
-        state::current_room(Here),
-        forall(
-            ( member(NPC, [gardener, dunbar, george, mrs_robner, rourke]),
-              state::location(NPC, Here),
-              npc_should_react(NPC, Here)
-            ),
-            npc_react(NPC)
-        ),
-        clock::queue_and_enable(npc_ai::i_follow, 1).
 
     :- private(npc_should_react/2).
     npc_should_react(gardener, _Here) :-
