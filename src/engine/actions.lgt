@@ -1068,6 +1068,15 @@
           ; \+ state::location(george, living_room)
           ) ->
             state::set_global(will_hold, true),
+            %% Redirect missing NPCs to living_room
+            ( \+ state::location(mrs_robner, living_room) ->
+                npc_ai::establish_goal(mrs_robner, living_room) ; true ),
+            ( \+ state::location(dunbar, living_room) ->
+                npc_ai::establish_goal(dunbar, living_room) ; true ),
+            ( \+ state::location(baxter, living_room) ->
+                npc_ai::establish_goal(baxter, living_room) ; true ),
+            ( \+ state::location(george, living_room) ->
+                npc_ai::establish_goal(george, living_room) ; true ),
             clock::queue_and_enable(actions::i_will_reading, 1),
             ( state::current_room(living_room) ->
                 ( utils::prob(70) -> true
