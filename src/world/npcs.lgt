@@ -161,12 +161,24 @@
     character_index(4).
     initial_location(george_room).
 
-    %% George dialogue responses
+    %% George dialogue responses (ZIL: GEORGE-F ASK-ABOUT, actions.zil lines 1248-1345)
     dialogue_response(murder, "\"Someone killed my father,\" he says flatly. \"I want to know who.\"").
     dialogue_response(will, "His jaw tightens. \"Dad was going to cut me out. I know that.\"").
+    dialogue_response(global_old_will, "\"I know what you know.\"").
     dialogue_response(robner, "\"My father and I didn't see eye to eye on things.\"").
     dialogue_response(meeting, "He looks away. \"I didn't see him this morning.\"").
     dialogue_response(gardener, "\"McNabb, that old bore? Always talking about the damn roses and weeds. Don't ask him about them, unless you have all day.\"").
+    dialogue_response(global_gardener, "\"McNabb, that old bore? Always talking about the damn roses and weeds. Don't ask him about them, unless you have all day.\"").
+    dialogue_response(baxter, "\"I don't know much about him, really. With Baxter, it's always business, and he's not here much except to discuss business with Dad. You might ask Ms. Dunbar about him, though.\"").
+    dialogue_response(global_baxter, "\"I don't know much about him, really. With Baxter, it's always business, and he's not here much except to discuss business with Dad. You might ask Ms. Dunbar about him, though.\"").
+    dialogue_response(dunbar, "\"She's been here for about ten years, I guess. She knows a lot about Dad's business. Other than that, I can't say. We don't get in each other's way.\"").
+    dialogue_response(global_dunbar, "\"She's been here for about ten years, I guess. She knows a lot about Dad's business. Other than that, I can't say. We don't get in each other's way.\"").
+    dialogue_response(mrs_robner, "\"She's OK. Not as stuck up as Dad about money. We've always gotten along pretty well. I think she understands me better than Dad ever did.\"").
+    dialogue_response(global_mrs_robner, "\"She's OK. Not as stuck up as Dad about money. We've always gotten along pretty well. I think she understands me better than Dad ever did.\"").
+    dialogue_response(rourke, "\"She's nice but awfully nosy. She acts like she knows everything that goes on around here, but she doesn't know the half of it.\"").
+    dialogue_response(global_rourke, "\"She's nice but awfully nosy. She acts like she knows everything that goes on around here, but she doesn't know the half of it.\"").
+    dialogue_response(global_merger, "\"I've heard talk of a merger between Dad's company and another one, but I don't think it's happened yet. Dad would be furious if it did, though. I can tell you that!\"").
+    dialogue_response(global_steven, "\"Steven? Oh, you must mean the guy who comes around for Mom now and then. I don't know much about him. Dresses a bit above himself, I'll say that much.\"").
 
     greet_response :-
         writeln("George looks up from where he's sitting. He appears pale and shaken.").

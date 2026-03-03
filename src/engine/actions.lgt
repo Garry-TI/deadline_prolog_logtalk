@@ -233,7 +233,12 @@
     room_look(george_room) :- !,
         write("This is George's bedroom. In addition to the normal furnishings, there\nis a small liquor cabinet, and a stereo with records and tapes. The door,\nleading to the hallway to the north, is "),
         ( state::has_flag(george_door, openbit) -> write("open") ; write("closed") ),
-        ddesc(". Another door, to the east, is ", george_bath_door, ".").
+        ddesc(". Another door, to the east, is ", george_bath_door, "."),
+        %% Show stereo status (ZIL: GEORGE-ROOM-F lines 389-392)
+        ( state::global_val(tune_on, Tune), Tune \= none ->
+            format("Playing on the stereo is a ~w.~n", [Tune])
+        ;   true
+        ).
 
     %% Fallback: no room_look handler - fail so describe_current_room uses ldesc
     room_look(_) :- fail.
@@ -899,17 +904,27 @@
     george_show_handler(V, lab_report) :-
         member(V, [v_confront, v_show]),
         !,
-        writeln("George examines the lab report with interest. \"So it was poison. I always"),
-        writeln("had my suspicions about Baxter. He was always too smooth.\"").
+        writeln("George scans the report. \"Killed, eh? I wonder who might have wanted...\" He"),
+        writeln("cocks his head in thought. \"I'm sorry, Inspector, I really should act a bit"),
+        writeln("better with you. I thought you were just snooping about, digging up dirt about"),
+        writeln("the family. I'm not sure...I can't believe Mom would have anything to do with"),
+        writeln("it, although...Baxter, now there's a worm for you. He'd do anything, maybe"),
+        writeln("even murder, to get ahead. I just don't know.\"").
 
     %% CONFRONT/SHOW letter: George bitter about Mrs. Robner's affair
     george_show_handler(V, letter) :-
         member(V, [v_confront, v_show]),
         !,
         state::set_global(g_letter, true),
-        writeln("George reads the letter, and his face contorts with rage. \"Honeymoon"),
-        writeln("plans! She was planning a honeymoon with that...\" He trails off,"),
-        writeln("shaking his head bitterly.").
+        writeln("George reads the letter quickly. \"Pompous ass! What does he know about"),
+        writeln("it?\" He pauses. \"I thought Mom was having an affair. How nice for the"),
+        writeln("lovebirds that Dad is dead! They can finish their honeymoon plans without"),
+        writeln("worrying. It's perfect!\" With a bitter laugh, he throws the letter to the"),
+        writeln("ground."),
+        %% George throws the letter on the ground (ZIL: MOVE LETTER HERE)
+        state::current_room(Here),
+        state::retractall(location(letter, _)),
+        state::assertz(location(letter, Here)).
 
     %% CONFRONT/SHOW desk_calendar with August page (ZIL: lines 1227-1239)
     %% This is the CRITICAL trigger for GEORGE-HACK
@@ -919,25 +934,28 @@
         state::global_val(calendar_page, Page),
         ( Page =:= 8, \+ state::global_val(george_sequence, true) ->
             %% August page shown — triggers will search!
+            state::set_global(g_calendar, true),
             ( state::global_val(will_time, WT), WT > 0 ->
-                writeln("George turns pale. \"I...uh...I don't really know what to say."),
-                writeln("I guess that Dad...but there is no other...I can't help you..."),
-                writeln("sorry.\" He is clearly agitated."),
-                state::set_global(g_calendar, true),
+                writeln("\"I...uh...I don't really know what to say. I guess that Dad...but there is"),
+                writeln("no other...I can't help you...sorry.\" George seems to be quite agitated."),
                 george_hack
             ;
+                writeln("George tilts his head in thought (or perhaps surprise) but recovers quickly."),
                 writeln("\"All I know is that Coates is my father's personal attorney.\"")
             )
         ;
             writeln("George barely glances at the calendar. \"So?\"")
         ).
 
-    %% CONFRONT/SHOW newspaper
+    %% CONFRONT/SHOW newspaper (ZIL: lines 1240-1247)
     george_show_handler(V, newspaper) :-
         member(V, [v_confront, v_show]),
         !,
-        writeln("George reads the article with barely concealed displeasure. \"I really"),
-        writeln("don't need this. It's just a lot of speculation.\"").
+        writeln("\"So Baxter's arranged the merger. I'll be damned. That's strange, since"),
+        writeln("Dad was opposed to the whole thing. He's worried about losing control of"),
+        writeln("the company ever since he had to sell off most of his interest. I bet he"),
+        writeln("doesn't even own enough shares to prevent the deal.\""),
+        writeln("He shakes his head in disbelief.").
 
     %% Default: not handled
     george_show_handler(_, _) :- fail.
