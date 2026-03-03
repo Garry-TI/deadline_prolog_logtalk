@@ -1049,6 +1049,171 @@
     i_coates_arrive :- npc_ai::i_coates_arrive.
 
     %% ---------------------------------------------------------------
+    %% WILL READING EVENT (ZIL: I-WILL-READING, actions.zil lines 1631-1708)
+    %%
+    %% Triggered when Coates reaches the living room. Checks that all
+    %% required NPCs (Mrs. Robner, Dunbar, Baxter, George) are present.
+    %% If not, waits and re-queues. When all present and player is in
+    %% living room, reads the will with full narrative.
+    %% ---------------------------------------------------------------
+
+    :- public(i_will_reading/0).
+    i_will_reading :-
+        state::global_val(present_time, PT),
+        %% Phase 1: Waiting for all NPCs to gather (before tick 760)
+        ( PT < 760,
+          ( \+ state::location(mrs_robner, living_room)
+          ; \+ state::location(dunbar, living_room)
+          ; \+ state::location(baxter, living_room)
+          ; \+ state::location(george, living_room)
+          ) ->
+            state::set_global(will_hold, true),
+            clock::queue_and_enable(actions::i_will_reading, 1),
+            ( state::current_room(living_room) ->
+                ( utils::prob(70) -> true
+                ; utils::prob(50) ->
+                    writeln("Mr. Coates asks everyone to be patient, as not everyone is present.")
+                ;
+                    writeln("Mr. Coates appears distracted, looking frequently toward the door.")
+                )
+            ;   true
+            )
+        ;
+        %% Phase 2: Player not in living room — wait, but not forever
+        \+ state::current_room(living_room) ->
+            state::global_val(will_wait, WW),
+            WW1 is WW + 1,
+            state::set_global(will_wait, WW1),
+            ( WW1 > 15 ->
+                %% Player missed the reading — enable I-WILL-MISSED
+                clock::queue_and_enable(actions::i_will_missed, 1),
+                will_hack
+            ;
+                clock::queue_and_enable(actions::i_will_reading, 1)
+            )
+        ;
+        %% Phase 3: All present and player in living room — read the will
+            state::set_global(at_reading, true),
+            state::global_val(will_wait, WaitCount),
+            %% Opening remarks based on timing
+            ( PT > 720, WaitCount > 3 ->
+                writeln("The people present turn to look at you. Mrs. Robner glares at you. \"You"),
+                writeln("might at least have the courtesy to be here on time! Haven't you caused enough"),
+                writeln("disruption already? We should have started without you. Mr. Coates, please"),
+                writeln("proceed.\"")
+            ; PT > 760 ->
+                writeln("\"It's late, so let's begin!\" Coates says.")
+            ; state::global_val(will_hold, true) ->
+                writeln("\"Ah!\" Mr. Coates says, \"Everybody's here now.\"")
+            ;   true
+            ),
+            %% The will reading itself
+            writeln("Mr. Coates begins: \"This is an awkward situation. Mr. Robner told me five"),
+            writeln("days ago that he wanted to execute a new will, and promised to call me when"),
+            writeln("it was completed. As I never heard from him, I must assume that he either"),
+            writeln("changed his mind or did not complete the new will. Therefore, the one in my"),
+            writeln("possession must be considered the most recent testament.\""),
+            %% George's reaction depends on G-CALENDAR flag
+            ( state::global_val(g_calendar, true) ->
+                writeln("You notice that George, who was not initially paying close attention, now"),
+                writeln("perks up and begins to look about anxiously.")
+            ;
+                writeln("From the corner of your eye, you catch George nodding his head, as"),
+                writeln("if in approval, and smiling broadly.")
+            ),
+            writeln("Continuing, Mr. Coates says: \"Naturally, should a more recent will exist"),
+            writeln("and be found within a reasonable period, the present one will be voided."),
+            writeln("I will proceed with reading the will here in my hands, which was executed"),
+            writeln("three years ago last month.\" He reads the will, simply written and direct,"),
+            writeln("leaving equal parts of the estate to his son, George Arthur Robner, and"),
+            writeln("his wife, Mrs. Leslie Phillips Robner."),
+            writeln("There is some discussion, understated congratulations and overstated"),
+            writeln("sympathy, which Mr. Coates cuts short by clearing his throat. \"I must"),
+            writeln("leave now, I'm afraid. If you have any questions, I can be contacted"),
+            writeln("tomorrow.\" He picks up the phone, dials his office, and asks to be"),
+            writeln("picked up at the Robner estate."),
+            ( state::global_val(g_calendar, true) ->
+                writeln("George, now looking quite upset, starts for the door.")
+            ;   true
+            ),
+            will_hack
+        ).
+
+    %% WILL-HACK: post-will-reading cleanup (ZIL: actions.zil lines 1710-1715)
+    :- private(will_hack/0).
+    will_hack :-
+        npc_ai::establish_goal(coates, south_lawn),
+        state::global_val(present_time, PT),
+        state::set_global(will_time, PT),
+        state::set_global(post_will, true),
+        %% Clear the will reading event from the queue
+        clock::disable_event(actions::i_will_reading),
+        ( state::global_val(g_calendar, true) ->
+            george_hack
+        ;   true
+        ).
+
+    %% I-WILL-MISSED: guilt messages when player misses the reading
+    %% (ZIL: actions.zil lines 4345-4357)
+    :- public(i_will_missed/0).
+    i_will_missed :-
+        state::current_room(Here),
+        ( state::location(mrs_robner, Here) ->
+            writeln("Mrs. Robner turns to you. \"I don't understand why you missed the will"),
+            writeln("reading. You seem so interested in everything else that goes on around"),
+            writeln("here.\""),
+            clock::disable_event(actions::i_will_missed)
+        ; state::location(coates, Here) ->
+            writeln("Mr. Coates says, in passing, \"To tell you the truth, Inspector, my"),
+            writeln("suspicions about this case are not quite allayed. I wish you had been"),
+            writeln("at the will reading. Good day.\""),
+            clock::disable_event(actions::i_will_missed)
+        ;   %% Keep trying until player encounters them
+            clock::queue_and_enable(actions::i_will_missed, 1)
+        ).
+
+    %% GEORGE-HACK: George reacts to calendar discovery (ZIL: lines 1719-1738)
+    %% After the will reading, if G-CALENDAR is set, George becomes anxious
+    %% and leaves to go destroy the new will.
+    :- private(george_hack/0).
+    george_hack :-
+        ( state::global_val(george_sequence, true) ->
+            true  % already triggered
+        ;
+            state::set_global(george_sequence, true),
+            state::location(george, GLoc),
+            state::current_room(Here),
+            ( GLoc = Here ->
+                ( GLoc = george_room ->
+                    writeln("George paces around. \"I just remembered,\" he says, \"I've got some personal"),
+                    writeln("business to attend to. Would you mind?\" He shows you to the door.")
+                ;
+                    writeln("\"I'm...I really have some business to do in my room. I'll speak"),
+                    writeln("to you later,\" George says. He starts off toward his room.")
+                )
+            ;   true
+            ),
+            npc_ai::establish_goal(george, north_lawn),
+            %% George will steal new_will, run to north_lawn, throw it in lake
+            clock::queue_and_enable(actions::i_george_destroy_will, 20)
+        ).
+
+    %% I-GEORGE-DESTROY-WILL: George destroys the new will
+    %% (ZIL: I-GEORGE goal.zil lines 591-613 — George throws will in lake)
+    :- public(i_george_destroy_will/0).
+    i_george_destroy_will :-
+        state::retractall(location(new_will, _)),
+        state::assertz(location(soggy_will, north_lawn)),
+        state::global_val(present_time, PT),
+        state::set_global(george_run, PT),
+        state::current_room(Here),
+        ( Here = north_lawn ->
+            writeln("You catch, out of the corner of one eye, George motioning with"),
+            writeln("his arm toward the lake.")
+        ;   true
+        ).
+
+    %% ---------------------------------------------------------------
     %% OBJECT ACTION HANDLERS
     %% ZIL: P?ACTION routines for individual objects.
     %% object_action(+Verb, +DO, +IO) succeeds if the object handles

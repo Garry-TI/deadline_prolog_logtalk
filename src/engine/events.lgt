@@ -35,4 +35,13 @@
     :- public(i_coates_arrive/0).
     i_coates_arrive :- npc_ai::i_coates_arrive.
 
+    :- public(i_will_reading/0).
+    i_will_reading :- actions::i_will_reading.
+
+    :- public(i_will_missed/0).
+    i_will_missed :- actions::i_will_missed.
+
+    :- public(i_george_destroy_will/0).
+    i_george_destroy_will :- actions::i_george_destroy_will.
+
 :- end_object.
