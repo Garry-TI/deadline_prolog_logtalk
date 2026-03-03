@@ -82,6 +82,18 @@
         state::assertz(global_val(post_will, false)),
         state::assertz(global_val(george_sequence, false)),
         state::assertz(global_val(george_run, 0)),
+        state::assertz(global_val(george_wait, 0)),
+        state::assertz(global_val(george_ready, false)),
+        state::assertz(global_val(george_scream, false)),
+        state::assertz(global_val(george_follow, false)),
+        state::assertz(global_val(george_search, 0)),
+        state::assertz(global_val(george_moves_books, false)),
+        state::assertz(global_val(stereo_on, false)),
+        state::assertz(global_val(tune_on, none)),
+        state::assertz(global_val(books_moved, false)),
+        state::assertz(global_val(safe_seen, false)),
+        state::assertz(global_val(new_will_seen, false)),
+        state::assertz(global_val(g_letter, false)),
         %% Calendar page (ZIL: CALENDAR-PAGE, default July 7)
         state::assertz(global_val(calendar_page, 7)),
         %% George calendar flag (ZIL: G-CALENDAR)

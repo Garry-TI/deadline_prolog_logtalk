@@ -295,6 +295,59 @@
         ;   true
         ).
 
+    %% George reached destination (ZIL: I-GEORGE G-REACHED, goal.zil lines 591-614)
+    goal_reached(george) :-
+        !,
+        state::location(george, Loc),
+        ( Loc = east_lawn ->
+            %% George relaxes at east lawn — unprioritize
+            true
+        ; Loc = george_room ->
+            %% George puts on stereo music
+            state::set_global(stereo_on, true),
+            record_table(Tune),
+            state::set_global(tune_on, Tune),
+            clock::queue_and_enable(npc_ai::i_tune_off, 25),
+            ( state::current_room(george_room) ->
+                format("George walks over to his stereo and puts on a record. He turns~n"),
+                format("to you. \"I naturally assume that you would like to hear a~n"),
+                format("~w.\" he says, barely concealing his clear distaste~n", [Tune]),
+                writeln("for you and your profession.")
+            ;   true
+            )
+        ; Loc = north_lawn ->
+            %% George throws the new will into the lake
+            state::retractall(location(new_will, _)),
+            state::assertz(location(soggy_will, lake)),
+            state::set_global(george_run, 0),
+            ( state::current_room(north_lawn) ->
+                writeln("You catch, out of the corner of one eye, George motioning with"),
+                writeln("his arm toward the lake.")
+            ;   true
+            )
+        ;   true
+        ).
+
+    %% I-TUNE-OFF: Turn off George's stereo after 25 ticks
+    :- public(i_tune_off/0).
+    i_tune_off :-
+        state::set_global(stereo_on, false),
+        state::set_global(tune_on, none).
+
+    %% RECORD-TABLE: Random record titles (ZIL: RECORD-TABLE in dungeon.zil)
+    %% ZIL: RECORD-TABLE (actions.zil line 4236)
+    :- private(record_table/1).
+    record_table(Tune) :-
+        utils::pick_one([
+            "Hungarian Rhapsody",
+            "march by Sir Edward Elgar",
+            "chorus of African tribal music",
+            "Hebrew prayer service",
+            "Pretenders concert",
+            "cacophonous electronic jumble",
+            "bluegrass tune"
+        ], Tune).
+
     %% Other NPCs — no special arrival behavior
     goal_reached(_NPC) :- true.
 
