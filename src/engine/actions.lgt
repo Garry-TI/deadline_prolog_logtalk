@@ -16,7 +16,7 @@
         comment is 'Room/object/NPC action handlers; pre-action checks; event routines.'
     ]).
 
-    :- uses(user, [member/2]).
+    :- uses(user, [member/2, random_between/3]).
 
     %% ---------------------------------------------------------------
     %% PRE-ACTION HANDLERS
@@ -1331,34 +1331,369 @@
             clock::queue_and_enable(actions::i_will_missed, 1)
         ).
 
-    %% GEORGE-HACK: George reacts to calendar discovery (ZIL: lines 1719-1738)
-    %% After the will reading, if G-CALENDAR is set, George becomes anxious
-    %% and leaves to go destroy the new will.
+    %% ---------------------------------------------------------------
+    %% GEORGE-HACK: Initial trigger (ZIL: actions.zil lines 1719-1738)
+    %% Triggered when player shows George the August calendar page, or
+    %% after will reading if g_calendar is set. George heads to his room
+    %% and begins the elaborate safe-access sequence.
+    %% ---------------------------------------------------------------
     :- private(george_hack/0).
     george_hack :-
         ( state::global_val(george_sequence, true) ->
             true  % already triggered
         ;
-            state::set_global(george_sequence, true),
             state::location(george, GLoc),
             state::current_room(Here),
             ( GLoc = Here ->
                 ( GLoc = george_room ->
                     writeln("George paces around. \"I just remembered,\" he says, \"I've got some personal"),
                     writeln("business to attend to. Would you mind?\" He shows you to the door.")
-                ;
+                ; is_top_line_room(GLoc) ->
                     writeln("\"I'm...I really have some business to do in my room. I'll speak"),
                     writeln("to you later,\" George says. He starts off toward his room.")
+                ;
+                    writeln("\"I've...got to be going now. I'll see you later,\" George says."),
+                    writeln("He starts to leave.")
                 )
             ;   true
             ),
-            npc_ai::establish_goal(george, north_lawn),
-            %% George will steal new_will, run to north_lawn, throw it in lake
-            clock::queue_and_enable(actions::i_george_destroy_will, 20)
+            ( GLoc \= george_room ->
+                npc_ai::establish_goal(george, george_room)
+            ;   true
+            ),
+            state::set_global(george_sequence, true),
+            state::set_global(george_wait, 0),
+            state::set_global(george_ready, false),
+            state::set_global(george_scream, false),
+            %% Enable I-GEORGE-HACK daemon (runs every tick)
+            clock::queue_demon(actions::i_george_hack, 0),
+            clock::enable_event(actions::i_george_hack)
         ).
 
+    :- private(is_top_line_room/1).
+    is_top_line_room(Room) :-
+        npc_ai::transit_line(top_line, Rooms),
+        member(Room, Rooms).
+
+    %% ---------------------------------------------------------------
+    %% I-GEORGE-HACK: Main daemon (ZIL: actions.zil lines 1744-1822)
+    %% Runs every tick while George is in sequence. Monitors George's
+    %% state and handles player interactions while George prepares.
+    %% ---------------------------------------------------------------
+    :- public(i_george_hack/0).
+    i_george_hack :-
+        state::location(george, GL),
+        state::current_room(Here),
+        ( state::global_val(george_ready, true) ->
+            %% George is in room, waiting for coast to clear
+            ( Here = GL ->
+                %% Player entered George's room!
+                state::set_global(george_ready, false),
+                state::set_global(george_scream, false),
+                state::set_global(george_wait, 1),
+                writeln("\"I don't understand you, Inspector. I asked to be alone so I can take care"),
+                writeln("of some business. I...I don't see why you have to snoop around here like I was"),
+                writeln("some sort of suspect.\""),
+                ( state::global_val(george_scream, true) ->
+                    writeln("\"I said to close that door and not to come in! You must be deaf as well as"),
+                    writeln("stupid!\"")
+                ;   true
+                )
+            ; state::has_flag(george_door, openbit),
+              \+ state::global_val(george_scream, true) ->
+                %% Player opened the door
+                writeln("As the door opens, you hear George say \"Close that door! I'm working!\""),
+                state::set_global(george_scream, true)
+            ;   true
+            )
+        ; state::global_val(george_wait, GW), GW > 0 ->
+            %% George is waiting for player to leave his room
+            ( Here = GL ->
+                writeln("George paces around the room, awaiting your departure with ill-concealed"),
+                writeln("impatience."),
+                GW1 is GW + 1,
+                state::set_global(george_wait, GW1),
+                ( GW1 > 12 ->
+                    %% George gives up and leaves
+                    writeln("\"I can't take this. You get on my nerves. I'm leaving.\""),
+                    state::set_global(george_wait, 0),
+                    npc_ai::establish_goal(george, living_room),
+                    clock::disable_event(actions::i_george_hack),
+                    %% Retry in 30 ticks
+                    clock::queue_and_enable(actions::i_george_hack_retry, 30)
+                ;   true
+                )
+            ;
+                %% Player left — close door, proceed
+                state::set_global(george_wait, 0),
+                state::clear_flag(george_door, openbit),
+                ( member(Here, [library, corridor_4, corridor_3]) ->
+                    writeln("You hear George's door close.")
+                ;   true
+                )
+            )
+        ; GL = george_room ->
+            %% George is in his room
+            ( Here = GL ->
+                %% Player is also in George's room
+                writeln("\"I have business to attend to. Would you mind leaving?\""),
+                state::set_global(george_wait, 1)
+            ;
+                %% Player not here — George is ready to attempt library run
+                state::set_global(george_ready, true),
+                clock::queue_and_enable(actions::i_george_hack_2, 5),
+                ( member(Here, [corridor_4, corridor_3]),
+                  state::has_flag(george_door, openbit) ->
+                    state::clear_flag(george_door, openbit),
+                    writeln("You hear George's door close.")
+                ;   true
+                ),
+                state::clear_flag(george_door, openbit)
+            )
+        ; Here = GL ->
+            %% Player is following George somewhere else
+            ( \+ state::global_val(george_follow, true) ->
+                state::set_global(george_follow, true)
+            ; utils::prob(50) ->
+                writeln("\"Please stop following me around like this. Can I have no privacy? I'm"),
+                writeln("simply trying to take care of something personal.\"")
+            ;
+                writeln("\"Stop following me. My business is private.\"")
+            )
+        ; GL = corridor_4 ->
+            %% George in corridor near his room
+            ( member(Here, [corridor_3, corridor_2, corridor_1]) ->
+                writeln("George glances in your direction, then enters his room."),
+                state::retractall(location(george, _)),
+                state::assertz(location(george, george_room))
+            ;   true
+            )
+        ; member(GL, [corridor_3, corridor_2]),
+          member(Here, [corridor_1, stair_top]) ->
+            writeln("George glances back at you briefly, then continues on his way.")
+        ;   true
+        ).
+
+    %% Retry george_hack after George gave up waiting for player to leave
+    :- public(i_george_hack_retry/0).
+    i_george_hack_retry :-
+        state::set_global(george_wait, 0),
+        state::set_global(george_ready, false),
+        state::set_global(george_scream, false),
+        state::set_global(george_follow, false),
+        ( state::location(george, george_room) ->
+            true
+        ;
+            npc_ai::establish_goal(george, george_room)
+        ),
+        clock::queue_demon(actions::i_george_hack, 0),
+        clock::enable_event(actions::i_george_hack).
+
+    %% ---------------------------------------------------------------
+    %% I-GEORGE-HACK-2: Door peeking (ZIL: actions.zil lines 1831-1879)
+    %% George periodically checks if the hallway is clear before
+    %% darting across to the library. Triggered while george_ready=true.
+    %% ---------------------------------------------------------------
+    :- public(i_george_hack_2/0).
+    i_george_hack_2 :-
+        state::current_room(Here),
+        ( state::global_val(george_ready, true) ->
+            ( member(Here, [corridor_1, corridor_2, corridor_3,
+                            corridor_4, stair_top, library]) ->
+                %% Player is nearby — George peeks and retreats
+                random_between(1, 9, NextDelay),
+                clock::queue_and_enable(actions::i_george_hack_2, NextDelay),
+                ( member(Here, [corridor_2, corridor_1, stair_top]) ->
+                    ( utils::prob(30) ->
+                        writeln("A door opens down the hall. George steps out, spots you, and looks briefly"),
+                        writeln("toward the window. After a moment he steps back into his room and shuts the"),
+                        writeln("door.")
+                    ;
+                        writeln("You faintly hear a door open and then close near the end of the hall.")
+                    )
+                ; member(Here, [corridor_4, library]) ->
+                    write("You hear George's door open and "),
+                    ( utils::prob(30) ->
+                        writeln("you catch a brief glimpse of his"),
+                        writeln("head darting back into the doorway. You watch as the door closes again.")
+                    ;
+                        writeln("close again immediately.")
+                    )
+                ; state::has_flag(george_door, openbit) ->
+                    state::clear_flag(george_door, openbit),
+                    writeln("George walks up to his door and slams it in your face.")
+                ; Here = corridor_3 ->
+                    writeln("George opens his door and peeks out. He is startled by your presence,"),
+                    writeln("excuses himself, and closes the door sharply in your face before you can"),
+                    writeln("utter a word.")
+                ;   true
+                )
+            ;
+                %% Coast is clear! George darts to the library
+                clock::disable_event(actions::i_george_hack),
+                state::retractall(location(george, _)),
+                state::assertz(location(george, library)),
+                state::set_flag(george_door, openbit),
+                clock::disable_event(actions::i_george_hack_2),
+                state::set_global(george_search, 0),
+                clock::queue_demon(actions::i_george_hack_3, 0),
+                clock::enable_event(actions::i_george_hack_3),
+                ( Here = upstairs_closet ->
+                    writeln("You hear George's door open and you see his head poke out briefly, scanning"),
+                    writeln("the hallway. He apparently didn't see you, and darts across the hall to the"),
+                    writeln("library.")
+                ; Here = library_balcony ->
+                    writeln("You see George through the doorway, looking down the hallway, then darting"),
+                    writeln("into the library.")
+                ;   true
+                )
+            )
+        ;
+            %% Not ready yet — re-queue with random delay
+            random_between(1, 9, NextDelay),
+            clock::queue_and_enable(actions::i_george_hack_2, NextDelay)
+        ).
+
+    %% ---------------------------------------------------------------
+    %% I-GEORGE-HACK-3: Safe access sequence (ZIL: actions.zil lines 1885-1978)
+    %% George accesses the hidden safe in the library. Progress tracked
+    %% by george_search counter (0-16+). Player can catch George at
+    %% various stages for different evidence outcomes.
+    %% ---------------------------------------------------------------
+    :- public(i_george_hack_3/0).
+    i_george_hack_3 :-
+        state::global_val(george_search, GS),
+        state::current_room(Here),
+        ( GS =:= 0 ->
+            %% Phase 0: George approaches bookshelves
+            ( Here = library_balcony ->
+                writeln("George walks purposefully toward the bookshelves. He looks around, but you"),
+                writeln("react before he can see you. When you peek out again, George is fiddling with"),
+                writeln("the shelves. His right arm reaches into the shelf and, to your amazement, the"),
+                writeln("unit of bookshelves on the left rotates away from the wall, revealing a"),
+                writeln("darkened room behind. George enters it, trembling with barely controlled fear"),
+                writeln("and excitement."),
+                state::set_global(books_moved, true),
+                state::set_global(george_moves_books, true),
+                state::retractall(location(george, _)),
+                state::assertz(location(george, hidden_closet))
+            ; Here = library ->
+                %% Player caught George in the library — he flees!
+                writeln("George hears you walk through the balcony doors and recoils in horror. He"),
+                writeln("runs across the hall to his own bedroom, slamming his door shut."),
+                state::set_global(george_ready, false),
+                state::set_global(george_wait, 0),
+                state::clear_flag(george_door, openbit),
+                state::retractall(location(george, _)),
+                state::assertz(location(george, george_room)),
+                clock::disable_event(actions::i_george_hack_3),
+                clock::queue_and_enable(actions::i_george_hack_2, 10),
+                clock::queue_demon(actions::i_george_hack, 0),
+                clock::enable_event(actions::i_george_hack)
+            ;
+                %% Player not watching — George enters hidden closet
+                state::retractall(location(george, _)),
+                state::assertz(location(george, hidden_closet)),
+                state::set_global(books_moved, true)
+            )
+        ; GS =:= 1 ->
+            %% Phase 1: Light comes on in closet
+            ( member(Here, [library, library_balcony]) ->
+                writeln("A dim light in the hidden closet comes on. In the faint light, you can see"),
+                writeln("George motioning with his right hand. All at once, the shelf swings shut!")
+            ;   true
+            )
+        ; GS < 10 ->
+            %% Phase 2-9: George searching for safe combination
+            ( state::has_flag(hidden_door_l, openbit) ->
+                %% Player opened the hidden door!
+                writeln("As the bookshelf swings open, you see George carefully dialing a combination"),
+                writeln("into a large wall safe. He turns in panic and, with an exclamation, knocks you"),
+                writeln("down and bolts out of the library."),
+                state::set_global(safe_seen, true),
+                state::set_global(george_search, 0),
+                clock::disable_event(actions::i_george_hack_3),
+                state::retractall(location(george, _)),
+                state::assertz(location(george, corridor_1)),
+                npc_ai::establish_goal(george, east_lawn)
+            ;   true
+            )
+        ; GS < 16 ->
+            %% Phase 10-15: George has the will!
+            ( state::has_flag(hidden_door_l, openbit) ->
+                %% CRITICAL: Player catches George with the will!
+                state::set_flag(safe, openbit),
+                state::set_global(safe_seen, true),
+                writeln("As the shelf swings open, George spins to face you. His expression, first"),
+                writeln("seemingly wild with happiness, changes to one of panic and horror. He jerks"),
+                writeln("around, trying feebly to conceal a piece of paper in his hands. He jumps"),
+                writeln("toward you, then recoils in fear. Finally, sobbing, he crumples to the floor,"),
+                writeln("clutching the paper beneath him. A large combination safe, imbedded in a wall,"),
+                writeln("is lying open. You enter the hidden closet."),
+                clock::disable_event(actions::i_george_hack_3),
+                state::retractall(location(new_will, _)),
+                state::assertz(location(new_will, george)),
+                %% Move player to hidden closet
+                state::retractall(current_room(_)),
+                state::assertz(current_room(hidden_closet)),
+                clock::queue_and_enable(actions::i_george_leave_closet, 10),
+                state::set_global(new_will_seen, true)
+            ;   true
+            )
+        ; GS =:= 16 ->
+            %% Phase 16: George emerges from closet
+            state::clear_flag(safe, openbit),
+            ( Here = library ->
+                %% Player in library — George panics and escapes!
+                writeln("Suddenly, the bookshelves swing out, forming an opening to a dark area"),
+                writeln("behind. George starts to emerge but stops suddenly as he notices you! With"),
+                writeln("jack-rabbit reflexes, he darts back inside. Before you can act, the"),
+                writeln("shelves close again."),
+                %% George escapes with will destroyed
+                state::retractall(location(george, _)),
+                state::assertz(location(george, north_lawn)),
+                state::retractall(location(new_will, _)),
+                state::assertz(location(soggy_will, lake)),
+                clock::disable_event(actions::i_george_hack_3),
+                state::global_val(present_time, PT),
+                state::set_global(george_run, PT)
+            ;
+                %% Player NOT in library — George emerges successfully
+                state::retractall(location(george, _)),
+                state::assertz(location(george, library)),
+                clock::disable_event(actions::i_george_hack_3),
+                npc_ai::establish_goal(george, north_lawn),
+                ( Here = library_balcony ->
+                    writeln("Suddenly, the shelf swings out, and George emerges. He walks over to a"),
+                    writeln("special place in the shelves and reaches behind some books. The bookshelves"),
+                    writeln("silently assume their normal position.")
+                ;   true
+                )
+            )
+        ;   true
+        ),
+        %% Advance search counter
+        state::global_val(george_search, CurGS),
+        NextGS is CurGS + 1,
+        state::set_global(george_search, NextGS).
+
+    %% ---------------------------------------------------------------
+    %% I-GEORGE-LEAVE-CLOSET (ZIL: actions.zil lines 1988-1991)
+    %% After player catches George with will, George eventually leaves.
+    %% ---------------------------------------------------------------
+    :- public(i_george_leave_closet/0).
+    i_george_leave_closet :-
+        ( state::location(george, hidden_closet) ->
+            npc_ai::establish_goal(george, george_room)
+        ;   true
+        ).
+
+    %% ---------------------------------------------------------------
     %% I-GEORGE-DESTROY-WILL: George destroys the new will
     %% (ZIL: I-GEORGE goal.zil lines 591-613 — George throws will in lake)
+    %% This is now handled by goal_reached(george) at north_lawn in npc_ai.lgt.
+    %% Kept for backward compatibility with clock events.
+    %% ---------------------------------------------------------------
     :- public(i_george_destroy_will/0).
     i_george_destroy_will :-
         state::retractall(location(new_will, _)),

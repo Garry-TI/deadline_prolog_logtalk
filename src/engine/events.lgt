@@ -44,4 +44,19 @@
     :- public(i_george_destroy_will/0).
     i_george_destroy_will :- actions::i_george_destroy_will.
 
+    :- public(i_george_hack/0).
+    i_george_hack :- actions::i_george_hack.
+
+    :- public(i_george_hack_2/0).
+    i_george_hack_2 :- actions::i_george_hack_2.
+
+    :- public(i_george_hack_3/0).
+    i_george_hack_3 :- actions::i_george_hack_3.
+
+    :- public(i_george_hack_retry/0).
+    i_george_hack_retry :- actions::i_george_hack_retry.
+
+    :- public(i_george_leave_closet/0).
+    i_george_leave_closet :- actions::i_george_leave_closet.
+
 :- end_object.
