@@ -779,9 +779,76 @@
         ).
     mrs_robner_action(_, _, _) :- true.
 
-    %% George: nervous son
-    :- public(george_action/3).
-    george_action(v_ask_about, george, pair(about, Topic)) :-
+    %% ---------------------------------------------------------------
+    %% GEORGE-F (ZIL: actions.zil lines 1143-1242)
+    %% George Robner action handler — dispatch by verb
+    %% ---------------------------------------------------------------
+
+    %% George as DO (ask, hello, goodbye, examine, search, accuse, arrest)
+    object_action(V, george, IO) :- george_handler(V, george, IO).
+    object_action(V, global_george, IO) :- george_handler(V, george, IO).
+
+    %% George as IO (show/confront X to george)
+    object_action(V, pair(to, george), DO) :- george_show_handler(V, DO).
+    object_action(V, pair(to, global_george), DO) :- george_show_handler(V, DO).
+
+    :- private(george_handler/3).
+
+    %% EXAMINE (M-OBJDESC — ZIL: lines 1145-1170)
+    george_handler(v_examine, _DO, _IO) :-
+        !,
+        george_describe.
+
+    %% HELLO / GOODBYE (ZIL: lines 1171-1172)
+    george_handler(V, _DO, _IO) :-
+        member(V, [v_hello, v_goodbye]),
+        !,
+        writeln("George looks up and grunts disinterestedly.").
+
+    %% CALL when GEORGE-RUN > 0 (ZIL: lines 1173-1175)
+    george_handler(v_call, _DO, _IO) :-
+        state::global_val(george_run, GR), GR > 0,
+        !,
+        writeln("\"Don't bother me!\" he shouts.").
+
+    %% SEARCH / SEARCH-OBJECT-FOR (ZIL: lines 1176-1183)
+    george_handler(V, _DO, _IO) :-
+        member(V, [v_search, v_search_for]),
+        !,
+        ( state::global_val(george_sequence, true) ->
+            writeln("\"Get lost!\" he snarls.")
+        ;
+            writeln("\"I'm getting sick and tired of your accusing tone, Inspector.\"")
+        ).
+
+    %% ACCUSE (ZIL: lines 1184-1185)
+    george_handler(v_accuse, _DO, _IO) :-
+        !,
+        writeln("\"What an ass! Go on, try to prove it!\"").
+
+    %% ARREST (ZIL: lines 1192-1206) — Game ending
+    george_handler(v_arrest, _DO, _IO) :-
+        !,
+        ( state::global_val(new_will_seen, true) ;
+          state::global_val(george_run, GR), GR > 0 ) ->
+            writeln("Faithful Sergeant Duffy enters and handcuffs George, who spits at you."),
+            writeln("\"You filthy, stinking...\" is all you hear as George is carted off"),
+            writeln("struggling."),
+            nl,
+            writeln("August 4"),
+            nl,
+            writeln("I am sorry to inform you that George Robner was acquitted in the death of"),
+            writeln("his father today. It seems the evidence, consisting mainly of a new will"),
+            writeln("which George admitted under pressure that he was trying to destroy, was"),
+            writeln("insufficient for the jury to return a guilty verdict. Although I suspect that"),
+            writeln("George may have committed the crime, his arrest was a bit premature."),
+            nl,
+            halt
+        ;
+            writeln("You don't have enough evidence to arrest George.").
+
+    %% ASK-ABOUT (ZIL: lines 1207-1215)
+    george_handler(v_ask_about, _DO, pair(about, Topic)) :-
         !,
         ( catch(george::dialogue_response(Topic, Response), _, Response = none) ->
             ( Response = none ->
@@ -790,7 +857,90 @@
             )
         ;   writeln("George shrugs. \"I don't know what you mean.\"")
         ).
-    george_action(_, _, _) :- true.
+
+    %% Default: not handled (fall through to verb handler)
+    george_handler(_, _, _) :- fail.
+
+    %% --- GEORGE-DESCRIBE (M-OBJDESC — ZIL lines 1145-1170) ---
+    :- private(george_describe/0).
+    george_describe :-
+        %% IN-MOTION? check — suppress description if mid-transit
+        ( state::npc_goal_enabled(george),
+          state::npc_goal(george, [_|_]) ->
+            true
+        ;
+            state::location(george, Loc),
+            ( Loc = kitchen ->
+                writeln("George is here, preparing a snack.")
+            ; Loc = dining_room ->
+                writeln("George is sitting at the table, eating some red herrings.")
+            ; Loc = living_room, state::global_val(post_will, true) ->
+                writeln("George is staring contentedly out the bay window.")
+            ; Loc = living_room ->
+                writeln("George is here, pacing around the room.")
+            ; Loc = north_lawn ->
+                writeln("George is here, staring out over the lake.")
+            ; Loc = george_room, state::global_val(tune_on, Tune), Tune \= none,
+              state::global_val(george_wait, GW), GW =:= 0 ->
+                format("George is lying on his bed, listening intently to a ~w.~n", [Tune])
+            ; Loc = george_room ->
+                writeln("George is sitting on his bed, deep in thought.")
+            ;
+                writeln("George is here.")
+            ),
+            %% CARRY-CHECK: show items George is carrying
+            carry_check(george)
+        ).
+
+    %% --- GEORGE SHOW/CONFRONT handler (ZIL: lines 1216-1240) ---
+    :- private(george_show_handler/2).
+
+    %% CONFRONT/SHOW lab_report: George reveals suspicions about Baxter
+    george_show_handler(V, lab_report) :-
+        member(V, [v_confront, v_show]),
+        !,
+        writeln("George examines the lab report with interest. \"So it was poison. I always"),
+        writeln("had my suspicions about Baxter. He was always too smooth.\"").
+
+    %% CONFRONT/SHOW letter: George bitter about Mrs. Robner's affair
+    george_show_handler(V, letter) :-
+        member(V, [v_confront, v_show]),
+        !,
+        state::set_global(g_letter, true),
+        writeln("George reads the letter, and his face contorts with rage. \"Honeymoon"),
+        writeln("plans! She was planning a honeymoon with that...\" He trails off,"),
+        writeln("shaking his head bitterly.").
+
+    %% CONFRONT/SHOW desk_calendar with August page (ZIL: lines 1227-1239)
+    %% This is the CRITICAL trigger for GEORGE-HACK
+    george_show_handler(V, desk_calendar) :-
+        member(V, [v_confront, v_show]),
+        !,
+        state::global_val(calendar_page, Page),
+        ( Page =:= 8, \+ state::global_val(george_sequence, true) ->
+            %% August page shown — triggers will search!
+            ( state::global_val(will_time, WT), WT > 0 ->
+                writeln("George turns pale. \"I...uh...I don't really know what to say."),
+                writeln("I guess that Dad...but there is no other...I can't help you..."),
+                writeln("sorry.\" He is clearly agitated."),
+                state::set_global(g_calendar, true),
+                george_hack
+            ;
+                writeln("\"All I know is that Coates is my father's personal attorney.\"")
+            )
+        ;
+            writeln("George barely glances at the calendar. \"So?\"")
+        ).
+
+    %% CONFRONT/SHOW newspaper
+    george_show_handler(V, newspaper) :-
+        member(V, [v_confront, v_show]),
+        !,
+        writeln("George reads the article with barely concealed displeasure. \"I really"),
+        writeln("don't need this. It's just a lot of speculation.\"").
+
+    %% Default: not handled
+    george_show_handler(_, _) :- fail.
 
     %% Rourke: the maid
     :- public(rourke_action/3).
