@@ -1,0 +1,12 @@
+# Claude Code project instructions (local only)
+CLAUDE.md
+
+# Claude Code session data
+.claude/
+
+# Logtalk temporary compilation files
+src/core/lgt_tmp/
+src/parser/lgt_tmp/
+src/engine/lgt_tmp/
+src/world/lgt_tmp/
+lgt_tmp/
