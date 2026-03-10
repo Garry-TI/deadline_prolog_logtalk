@@ -6,7 +6,7 @@ This repository contains both the **original ZIL source code** and an ongoing **
 
 ## Further Information
 
-* [Wikipedia](https://en.wikipedia.org/wiki/Deadline_(video_game))
+* [Wikipedia](https://en.wikipedia.org/wiki/Deadline_(1982_video_game))
 * [The Digital Antiquarian](https://www.filfre.net/2012/07/deadline/)
 * [The Interactive Fiction Database](https://ifdb.tads.org/viewgame?id=p976o7x5ies9ltdh)
 * [The Infocom Gallery](http://infocom.elsewhere.org/gallery/deadline_grey/)
